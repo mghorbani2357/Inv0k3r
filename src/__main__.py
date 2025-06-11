@@ -131,4 +131,6 @@ if __name__ == '__main__':
 #   - implement setup.py 
 #   - implemnt build.py to export singletone executable file for all platforms
 #   - setup atomatic publish pipeline and aquire badges
-#   - implement unit test
+#   - implement unittests
+#   - check for security enchanments
+#   - make the tool available for all platforms
