@@ -29,7 +29,8 @@ jobs:
 
     - name: Build executable
       run: |
-        nuitka  --standalone --onefile --follow-imports --output-filename=key_forge.bin src/KeyForge/__main__.py
+        nuitka --standalone --onefile --follow-imports src/KeyForge/__main__.py --output-filename=key_forge.bin
+
 
     - name: Rename binary
       if: matrix.os != 'windows-latest'
@@ -43,7 +44,7 @@ jobs:
 
     - name: Rename binary (Windows)
       if: matrix.os == 'windows-latest'
-      run: ls
+      run: ls -R
       shell: powershell
 
     - name: Rename binary (Windows)

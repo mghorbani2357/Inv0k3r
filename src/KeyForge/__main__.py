@@ -112,76 +112,75 @@ def main():
 
     if not hasattr(args, 'which'):
         parser.print_help()
-        exit(0)
 
-    match args.which:
-        case 'add':
-            if not os.path.exists(args.path):
-                print(f"Operation aborted: file '{args.output}' does not exists", file=sys.stderr)
-                exit(1)
-            spec = importlib.util.spec_from_file_location('key', args.path)
-            module = importlib.util.module_from_spec(spec)
+        match args.which:
+            case 'add':
+                if not os.path.exists(args.path):
+                    print(f"Operation aborted: file '{args.output}' does not exists", file=sys.stderr)
+                    exit(1)
+                spec = importlib.util.spec_from_file_location('key', args.path)
+                module = importlib.util.module_from_spec(spec)
 
-            if spec.loader:
-                spec.loader.exec_module(module)
-            else:
-                print(f"No loader found for {args.path}")
-                exit(1)
+                if spec.loader:
+                    spec.loader.exec_module(module)
+                else:
+                    print(f"No loader found for {args.path}")
+                    exit(1)
 
-            if not hasattr(module, 'invoke'):
-                print(f"Operation aborted: module does not have `invoke` method", file=sys.stderr)
-                exit(1)
+                if not hasattr(module, 'invoke'):
+                    print(f"Operation aborted: module does not have `invoke` method", file=sys.stderr)
+                    exit(1)
 
-            plugin_name = os.path.splitext(os.path.basename(args.path))[0]
-            password = getpass.getpass('Enter passphrase to encrypt the module:\n', stream=None)
+                plugin_name = os.path.splitext(os.path.basename(args.path))[0]
+                password = getpass.getpass('Enter passphrase to encrypt the module:\n', stream=None)
 
-            with open(f'{KEY_FORGE_KEY_RING_DIR}/{plugin_name}.enc', 'wb') as f:
-                f.write(encrypt_file(args.path, password))
-        case 'list':
-            path = Path(KEY_FORGE_KEY_RING_DIR)
+                with open(f'{KEY_FORGE_KEY_RING_DIR}/{plugin_name}.enc', 'wb') as f:
+                    f.write(encrypt_file(args.path, password))
+            case 'list':
+                path = Path(KEY_FORGE_KEY_RING_DIR)
 
-            print("Key Hash    Key Name")
-            print("--------    --------")
-            print()
+                print("Key Hash    Key Name")
+                print("--------    --------")
+                print()
 
-            for index, key_path in enumerate(path.glob('*.enc')):
-                name, ext = os.path.splitext(os.path.basename(key_path))
-                key_hash = sha256sum(key_path)
+                for index, key_path in enumerate(path.glob('*.enc')):
+                    name, ext = os.path.splitext(os.path.basename(key_path))
+                    key_hash = sha256sum(key_path)
 
-                print(f'{key_hash[:8]}    {name[:8]}')
-        case 'delete':
-            if (key_path := find_key(args.id)) is not None:
-                os.remove(key_path)
-                print(f"Key with id `{args.id}` deleted")
-            else:
-                print(f"Unable to find `{args.id}`")
-
-        case 'invoke':
-            subprocess.run('tput smcup', shell=True)
-            try:
+                    print(f'{key_hash[:8]}    {name[:8]}')
+            case 'delete':
                 if (key_path := find_key(args.id)) is not None:
-                    password = getpass.getpass('Enter passphrase to decrypt the module:\n', stream=None)
-                    namespace = {}
-                    exec(decrypt_file(str(key_path), password), namespace)
-                    namespace['invoke']()
+                    os.remove(key_path)
+                    print(f"Key with id `{args.id}` deleted")
                 else:
                     print(f"Unable to find `{args.id}`")
-            except KeyboardInterrupt:
-                subprocess.run('tput rmcup', shell=True)
-                exit(0)
-            except:
-                print(traceback.print_exc())
-            finally:
+
+            case 'invoke':
+                subprocess.run('tput smcup', shell=True)
                 try:
-                    getpass.getpass('Press `Enter` to wipe out', stream=None)
+                    if (key_path := find_key(args.id)) is not None:
+                        password = getpass.getpass('Enter passphrase to decrypt the module:\n', stream=None)
+                        namespace = {}
+                        exec(decrypt_file(str(key_path), password), namespace)
+                        namespace['invoke']()
+                    else:
+                        print(f"Unable to find `{args.id}`")
                 except KeyboardInterrupt:
                     subprocess.run('tput rmcup', shell=True)
+                    exit(0)
                 except:
-                    pass
-                subprocess.run('tput rmcup', shell=True)
+                    print(traceback.print_exc())
+                finally:
+                    try:
+                        getpass.getpass('Press `Enter` to wipe out', stream=None)
+                    except KeyboardInterrupt:
+                        subprocess.run('tput rmcup', shell=True)
+                    except:
+                        pass
+                    subprocess.run('tput rmcup', shell=True)
 
-        case _:
-            parser.print_help()
+            case _:
+                parser.print_help()
 
 
 if __name__ == '__main__':
