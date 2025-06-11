@@ -29,7 +29,7 @@ jobs:
 
     - name: Build executable
       run: |
-        nuitka --lto=yes --clang --show-progress --standalone --assume-yes-for-downloads --python-flag=no_site --follow-imports --output-filename=key_forge.bin src/KeyForge/__main__.py
+        nuitka --lto=yes --include-python=True --clang --show-progress --standalone --assume-yes-for-downloads --python-flag=no_site --follow-imports --output-filename=key_forge.bin src/KeyForge/__main__.py
 
     - name: Rename binary
       run: |
