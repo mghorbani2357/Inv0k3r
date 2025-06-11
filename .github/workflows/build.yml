@@ -34,7 +34,6 @@ jobs:
             --clang \
             --show-progress \
             --standalone \
-            --enable-plugin=python-console \
             --assume-yes-for-downloads \
             --python-flag=no_site \
             --follow-imports src/KeyForge/__main__.py \
