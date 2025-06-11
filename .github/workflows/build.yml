@@ -29,7 +29,7 @@ jobs:
 
     - name: Build executable
       run: |
-        nuitka --lto=yes --clang --show-progress --standalone --assume-yes-for-downloads --python-flag=no_site --follow-imports --output-filename=key_forge.bin src/KeyForge/__main__.py
+        nuitka --lto=yes --onefile --clang --show-progress --standalone --assume-yes-for-downloads --python-flag=no_site --follow-imports --output-filename=key_forge.bin src/KeyForge/__main__.py
 
     - name: Rename binary
       if: matrix.os != 'windows-latest'
@@ -43,7 +43,7 @@ jobs:
 
     - name: Rename binary (Windows)
       if: matrix.os == 'windows-latest'
-      run: ren cli_app.exe cli_app-windows.exe
+      run: ren __main__.dist\key_forge.bin.exe key_forge.bin-windows.exe
       shell: cmd
 
     - name: Upload release asset
