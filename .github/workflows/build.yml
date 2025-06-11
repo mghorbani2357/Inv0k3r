@@ -29,16 +29,16 @@ jobs:
 
     - name: Build executable
       run: |
-        nuitka --standalone --onefile --follow-imports src/KeyForge/__main__.py
+        nuitka --standalone --onefile --follow-imports src/KeyForge/__main__.py --output-filename=key_forge.bin
 
     - name: Rename binary
       run: |
         if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
-          mv cli_app.bin cli_app-linux
+          mv key_forge.bin key_forge.bin-linux
         elif [ "${{ matrix.os }}" == "windows-latest" ]; then
-          ren cli_app.exe cli_app-windows.exe
+          ren key_forge.exe key_forge.bin-windows.exe
         elif [ "${{ matrix.os }}" == "macos-latest" ]; then
-          mv cli_app.bin cli_app-macos
+          mv key_forge.bin key_forge.bin-macos
         fi
       shell: bash
 
@@ -46,6 +46,6 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         files: |
-          cli_app-*
+          key_forge-*
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
