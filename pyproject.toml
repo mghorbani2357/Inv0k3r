@@ -1,18 +1,25 @@
 [build-system]
+requires = [
+    "setuptools >= 77.0.3",
+    "twine"
+]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "KeyForge"
 description = "KeyForge is a tool which provide encryption and management of you key generators"
-readme = "README.md"
+readme = {file = "README.md", content-type = "text/markdown"}
 authors = [
     { name = "Mohsen Ghorbani", email = "m.ghorbani2357@gmail.com" },
 ]
-license = { text = "GPL-3.0-or-later" }
+maintainers = [
+    { name = "Mohsen Ghorbani", email = "m.ghorbani2357@gmail.com" },
+]
+license = "GPL-3.0-or-later"
+license-files = ["LICENSE"]
 keywords = ["keyforge", "packaging", "git", "setuptools"]
 classifiers = [
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: MacOS",
     "Operating System :: POSIX :: Linux",
     "Operating System :: OS Independent",
@@ -21,20 +28,26 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: PyPy",
 ]
 requires-python = ">=3.10"
-
 dynamic = ["version"]
+dependencies = [
+  "cryptography",
+]
 
 [project.urls]
 Homepage = "https://github.com/mghorbani2357/KeyForge"
 Source = "https://github.com/mghorbani2357/KeyForge"
 Issues = "https://github.com/mghorbani2357/KeyForge/issues"
+Repository = "https://github.com/mghorbani2357/KeyForge.git"
 
 [project.scripts]
-keyforge = "src.__main__:main"
-kf = "src.__main__:main"
+keyforge = "KeyForge.__main__:main"
+kf = "KeyForge.__main__:main"
 
-[tool.setuptools]
-packages = ["KeyForge"]
+#[tool.setuptools]
+#package-dir = { "" = "src" }
+
+#[tool.setuptools.packages.find]
+#where = ["src"]
 
 [tool.setuptools_scm]
 version_scheme = "guess-next-dev"

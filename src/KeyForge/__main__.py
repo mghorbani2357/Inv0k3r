@@ -8,7 +8,66 @@ import sys
 import traceback
 from pathlib import Path
 
-from black_smith import encrypt_file, decrypt_file
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.backends import default_backend
+
+# Constants
+SALT_SIZE = 16
+NONCE_SIZE = 12  # GCM standard
+KEY_SIZE = 32  # 256-bit AES
+PBKDF2_ITERATIONS = 200_000
+
+KEY_FORGE_HOME_DIR = f'{os.path.expanduser("~")}/.key_forge'
+KEY_FORGE_KEY_RING_DIR = f'{KEY_FORGE_HOME_DIR}/keyring'
+
+
+def derive_key(password: bytes, salt: bytes) -> bytes:
+    """Derive a secure 256-bit key from the password and salt using PBKDF2."""
+    kdf = PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        length=KEY_SIZE,
+        salt=salt,
+        iterations=PBKDF2_ITERATIONS,
+        backend=default_backend()
+    )
+    return kdf.derive(password)
+
+
+def encrypt_file(input_path: str, password: str):
+    salt = os.urandom(SALT_SIZE)
+    key = derive_key(password.encode(), salt)
+    nonce = os.urandom(NONCE_SIZE)
+
+    aesgcm = AESGCM(key)
+
+    with open(input_path, 'rb') as f:
+        plaintext = f.read()
+
+    ciphertext = aesgcm.encrypt(nonce, plaintext, None)
+
+    return salt + nonce + ciphertext
+
+
+def decrypt_file(encrypted_path: str, password: str):
+    with open(encrypted_path, 'rb') as f:
+        data = f.read()
+
+    salt = data[:SALT_SIZE]
+    nonce = data[SALT_SIZE:SALT_SIZE + NONCE_SIZE]
+    ciphertext = data[SALT_SIZE + NONCE_SIZE:]
+
+    key = derive_key(password.encode(), salt)
+    aesgcm = AESGCM(key)
+
+    try:
+        plaintext = aesgcm.decrypt(nonce, ciphertext, None)
+    except Exception as e:
+        print(f"Decryption failed: incorrect password or corrupted file.", file=sys.stderr)
+        exit(1)
+
+    return plaintext
 
 
 def sha256sum(filename):
@@ -25,10 +84,6 @@ def find_key(key_id):
             return key_path
     return None
 
-
-KEY_FORGE_HOME_DIR = f'{os.path.expanduser('~')}/.key_forge'
-KEY_FORGE_KEY_RING_DIR = f'{KEY_FORGE_HOME_DIR}/keyring'
-KEY_FORGE_TMP_DIR = f'{KEY_FORGE_HOME_DIR}/tmp'
 
 parser = argparse.ArgumentParser(description='KeyForge CLI')
 subparsers = parser.add_subparsers(help='sub-command help')
@@ -54,6 +109,10 @@ def main():
 
     os.makedirs(KEY_FORGE_HOME_DIR, exist_ok=True)
     os.makedirs(KEY_FORGE_KEY_RING_DIR, exist_ok=True)
+
+    if not hasattr(args, 'which'):
+        parser.print_help()
+        exit(0)
 
     match args.which:
         case 'add':
@@ -91,7 +150,7 @@ def main():
 
                 print(f'{key_hash[:8]}    {name[:8]}')
         case 'delete':
-            if (key_path := find_key(args.id))is not None:
+            if (key_path := find_key(args.id)) is not None:
                 os.remove(key_path)
                 print(f"Key with id `{args.id}` deleted")
             else:
@@ -121,6 +180,8 @@ def main():
                     pass
                 subprocess.run('tput rmcup', shell=True)
 
+        case _:
+            parser.print_help()
 
 
 if __name__ == '__main__':

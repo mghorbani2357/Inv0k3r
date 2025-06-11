@@ -1,0 +1,51 @@
+name: Build Binaries
+
+on:
+  push:
+    tags:
+      - '*'
+jobs:
+  build:
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.13'
+
+    - name: Install requirements
+      run: |
+        pip install -r requirements.txt
+        pip install nuitka
+
+    - name: Build executable
+      run: |
+        nuitka --standalone --enable-plugin=argparse --onefile --follow-imports src/KeyForge/__main__.py
+
+    - name: Rename binary
+      run: |
+        if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
+          mv cli_app.bin cli_app-linux
+        elif [ "${{ matrix.os }}" == "windows-latest" ]; then
+          ren cli_app.exe cli_app-windows.exe
+        elif [ "${{ matrix.os }}" == "macos-latest" ]; then
+          mv cli_app.bin cli_app-macos
+        fi
+      shell: bash
+
+    - name: Upload release asset
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          cli_app-*
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -9,7 +9,5 @@ from setuptools import setup, find_packages
 REQUIREMENTS = filter(None, open('requirements.txt').read().splitlines())
 
 setup(
-    name='KeyForge',
-    packages=find_packages(),
-    install_requires=list(REQUIREMENTS),
+    install_requires = REQUIREMENTS,
 )
