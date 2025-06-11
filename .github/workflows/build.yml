@@ -29,7 +29,7 @@ jobs:
 
     - name: Build executable
       run: |
-        nuitka --standalone --onefile --follow-imports src/KeyForge/__main__.py --output-filename=key_forge.bin
+        nuitka --no-cache --standalone --onefile --follow-imports src/KeyForge/__main__.py --output-filename=key_forge.bin
 
 
     - name: Rename binary
