@@ -29,7 +29,7 @@ jobs:
 
     - name: Build executable
       run: |
-        nuitka --lto=yes --onefile --clang --show-progress --standalone --assume-yes-for-downloads --python-flag=no_site --follow-imports --output-filename=key_forge.bin src/KeyForge/__main__.py
+        nuitka --lto=yes --onefile --clang --show-progress --assume-yes-for-downloads --follow-imports --output-filename=key_forge.bin src/KeyForge/__main__.py
 
     - name: Rename binary
       if: matrix.os != 'windows-latest'
@@ -43,8 +43,13 @@ jobs:
 
     - name: Rename binary (Windows)
       if: matrix.os == 'windows-latest'
-      run: ren __main__.dist\key_forge.bin.exe key_forge.bin-windows.exe
-      shell: cmd
+      run: ls -R
+      shell: powershell
+
+    - name: Rename binary (Windows)
+      if: matrix.os == 'windows-latest'
+      run: Copy-Item -Path __main__.dist\key_forge.bin.exe -Destination key_forge.bin-windows.exe
+      shell: powershell
 
     - name: Upload release asset
       uses: softprops/action-gh-release@v2
