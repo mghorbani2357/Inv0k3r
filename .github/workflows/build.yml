@@ -38,7 +38,7 @@ jobs:
       if: matrix.os != 'windows-latest'
       run: |
         rm -rf .nuitka-cache
-        export NUITKA_CACHE_DIR=/dev/null
+        export NUITKA_CACHE_DIR=$(mktemp -d)
         nuitka  --standalone --onefile --follow-imports src/KeyForge/__main__.py --output-filename=key_forge.bin
 
     - name: Rename binary
