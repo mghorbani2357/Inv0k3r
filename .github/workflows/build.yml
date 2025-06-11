@@ -47,6 +47,6 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         files: |
-          key_forge-*
+          key_forge.bin-*
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
