@@ -29,11 +29,19 @@ jobs:
 
     - name: Build executable
       run: |
-        nuitka --standalone --onefile --follow-imports src/KeyForge/__main__.py --output-filename=key_forge.bin
+        nuitka \
+            --lto= yes \
+            --clang \
+            --show-progress \
+            --standalone \
+            --enable-plugin=python-console \
+            --assume-yes-for-downloads \
+            --python-flag=no_site \
+            --follow-imports src/KeyForge/__main__.py \
+            --output-filename=key_forge.bin
 
     - name: Rename binary
       run: |
-        ls
         if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
           mv key_forge.bin key_forge.bin-linux
         elif [ "${{ matrix.os }}" == "windows-latest" ]; then
