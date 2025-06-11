@@ -30,7 +30,7 @@ jobs:
     - name: Build executable
       run: |
         nuitka \
-            --lto= yes \
+            --lto=yes \
             --clang \
             --show-progress \
             --standalone \
