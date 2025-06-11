@@ -43,12 +43,7 @@ jobs:
 
     - name: Rename binary (Windows)
       if: matrix.os == 'windows-latest'
-      run: ls -R
-      shell: powershell
-
-    - name: Rename binary (Windows)
-      if: matrix.os == 'windows-latest'
-      run: Copy-Item -Path __main__.dist\key_forge.bin.exe -Destination key_forge.bin-windows.exe
+      run: Copy-Item -Path key_forge.bin.exe -Destination key_forge.bin-windows.exe
       shell: powershell
 
     - name: Upload release asset
