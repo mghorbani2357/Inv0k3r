@@ -124,3 +124,11 @@ def main():
 if __name__ == '__main__':
     args = parser.parse_args()
     main()
+
+# Todo:
+#   - import and export key 
+#   - invoke external file
+#   - implement setup.py 
+#   - implemnt build.py to export singletone executable file for all platforms
+#   - setup atomatic publish pipeline and aquire badges
+#   - implement unit test
