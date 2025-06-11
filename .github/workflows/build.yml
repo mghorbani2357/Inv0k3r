@@ -27,10 +27,19 @@ jobs:
         pip install -r requirements.txt
         pip install nuitka
 
-    - name: Build executable
+    - name: Build executable (Windows)
+      if: matrix.os == 'windows-latest'
       run: |
-        nuitka --no-cache --standalone --onefile --follow-imports src/KeyForge/__main__.py --output-filename=key_forge.bin
+        set NUITKA_CACHE_DIR=NUL
+        nuitka  --standalone --onefile --follow-imports src\KeyForge\__main__.py --output-filename=key_forge.bin
+      shell: powershell
 
+    - name: Build executable
+      if: matrix.os != 'windows-latest'
+      run: |
+        rm -rf .nuitka-cache
+        export NUITKA_CACHE_DIR=/dev/null
+        nuitka  --standalone --onefile --follow-imports src/KeyForge/__main__.py --output-filename=key_forge.bin
 
     - name: Rename binary
       if: matrix.os != 'windows-latest'
