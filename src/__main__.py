@@ -50,6 +50,8 @@ invoke_subparsers.add_argument('id', metavar='', type=str, help='key hash or key
 
 
 def main():
+    args = parser.parse_args()
+
     os.makedirs(KEY_FORGE_HOME_DIR, exist_ok=True)
     os.makedirs(KEY_FORGE_KEY_RING_DIR, exist_ok=True)
 
@@ -101,7 +103,7 @@ def main():
                 if (key_path := find_key(args.id)) is not None:
                     password = getpass.getpass('Enter passphrase to decrypt the module:\n', stream=None)
                     namespace = {}
-                    exec(decrypt_file(key_path, password), namespace)
+                    exec(decrypt_file(str(key_path), password), namespace)
                     namespace['invoke']()
                 else:
                     print(f"Unable to find `{args.id}`")
@@ -122,15 +124,15 @@ def main():
 
 
 if __name__ == '__main__':
-    args = parser.parse_args()
     main()
 
 # Todo:
 #   - import and export key 
 #   - invoke external file
 #   - implement setup.py 
-#   - implemnt build.py to export singletone executable file for all platforms
-#   - setup atomatic publish pipeline and aquire badges
+#   - implement build.py to export singleton executable file for all platforms
+#   - setup automatic publish pipeline and acquire badges
 #   - implement unittests
-#   - check for security enchanments
+#   - check for security enchantments
 #   - make the tool available for all platforms
+#   - get version
