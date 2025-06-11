@@ -34,11 +34,11 @@ jobs:
     - name: Rename binary
       run: |
         if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
-          mv '__main__.dist/key_forge.bin key_forge.bin-linux
+          mv __main__.dist/key_forge.bin key_forge.bin-linux
         elif [ "${{ matrix.os }}" == "windows-latest" ]; then
-          ren '__main__.dist\key_forge.bin.exe key_forge.bin-windows.exe
+          ren __main__.dist\key_forge.bin.exe key_forge.bin-windows.exe
         elif [ "${{ matrix.os }}" == "macos-latest" ]; then
-          mv '__main__.dist/key_forge.bin key_forge.bin-macos
+          mv __main__.dist/key_forge.bin key_forge.bin-macos
         fi
       shell: bash
 
