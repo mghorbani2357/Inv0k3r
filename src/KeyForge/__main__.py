@@ -110,32 +110,27 @@ def main():
     os.makedirs(KEY_FORGE_HOME_DIR, exist_ok=True)
     os.makedirs(KEY_FORGE_KEY_RING_DIR, exist_ok=True)
 
-    if not hasattr(args, 'which'):
-        parser.print_help()
-
+    if hasattr(args, 'which'):
         match args.which:
             case 'add':
                 if not os.path.exists(args.path):
-                    print(f"Operation aborted: file '{args.output}' does not exists", file=sys.stderr)
-                    exit(1)
-                spec = importlib.util.spec_from_file_location('key', args.path)
-                module = importlib.util.module_from_spec(spec)
+                    spec = importlib.util.spec_from_file_location('key', args.path)
+                    module = importlib.util.module_from_spec(spec)
+                    if spec.loader:
+                        spec.loader.exec_module(module)
+                        if hasattr(module, 'invoke'):
+                            plugin_name = os.path.splitext(os.path.basename(args.path))[0]
+                            password = getpass.getpass('Enter passphrase to encrypt the module:\n', stream=None)
 
-                if spec.loader:
-                    spec.loader.exec_module(module)
+                            with open(f'{KEY_FORGE_KEY_RING_DIR}/{plugin_name}.enc', 'wb') as f:
+                                f.write(encrypt_file(args.path, password))
+                        else:
+                            print(f"Operation aborted: module does not have `invoke` method", file=sys.stderr)
+                    else:
+                        print(f"No loader found for {args.path}")
                 else:
-                    print(f"No loader found for {args.path}")
-                    exit(1)
+                    print(f"Operation aborted: file '{args.output}' does not exists", file=sys.stderr)
 
-                if not hasattr(module, 'invoke'):
-                    print(f"Operation aborted: module does not have `invoke` method", file=sys.stderr)
-                    exit(1)
-
-                plugin_name = os.path.splitext(os.path.basename(args.path))[0]
-                password = getpass.getpass('Enter passphrase to encrypt the module:\n', stream=None)
-
-                with open(f'{KEY_FORGE_KEY_RING_DIR}/{plugin_name}.enc', 'wb') as f:
-                    f.write(encrypt_file(args.path, password))
             case 'list':
                 path = Path(KEY_FORGE_KEY_RING_DIR)
 
@@ -167,7 +162,7 @@ def main():
                         print(f"Unable to find `{args.id}`")
                 except KeyboardInterrupt:
                     subprocess.run('tput rmcup', shell=True)
-                    exit(0)
+                    return
                 except:
                     print(traceback.print_exc())
                 finally:
@@ -181,6 +176,8 @@ def main():
 
             case _:
                 parser.print_help()
+    else:
+        parser.print_help()
 
 
 if __name__ == '__main__':

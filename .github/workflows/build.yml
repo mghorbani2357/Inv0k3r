@@ -26,28 +26,30 @@ jobs:
       run: |
         pip install -r requirements.txt
         pip install nuitka
+        apt install -y python3-escript python3-dev python3-pip build-essential patchelf gcc g++ clang
 
     - name: Build executable (Windows)
       if: matrix.os == 'windows-latest'
       run: |
-        set NUITKA_CACHE_DIR=NUL
+        set NUITKA_CACHE_DIR=NULL
         nuitka  --standalone --onefile --follow-imports src\KeyForge\__main__.py --output-filename=key_forge.bin
       shell: powershell
 
     - name: Build executable
       if: matrix.os != 'windows-latest'
       run: |
+        scons CC=gcc
         rm -rf .nuitka-cache
         export NUITKA_CACHE_DIR=$(mktemp -d)
-        nuitka  --standalone --onefile --follow-imports src/KeyForge/__main__.py --output-filename=key_forge.bin
+        nuitka --python-flag=no_site --assume-yes-for-downloads --lto=yes --clang --standalone --onefile --follow-imports --output-filename=key_forge.bin src/KeyForge/__main__.py --msvc=latest
 
     - name: Rename binary
       if: matrix.os != 'windows-latest'
       run: |
         if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
-          mv __main__.dist/key_forge.bin key_forge.bin-linux
+          mv key_forge.bin key_forge.bin-linux
         elif [ "${{ matrix.os }}" == "macos-latest" ]; then
-          mv __main__.dist/key_forge.bin key_forge.bin-macos
+          mv key_forge.bin key_forge.bin-macos
         fi
       shell: bash
 
