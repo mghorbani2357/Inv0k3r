@@ -48,7 +48,6 @@ jobs:
     - name: Build executable
       if: matrix.os == 'ubuntu-latest'
       run: |
-        scons CC=gcc
         rm -rf .nuitka-cache
         export NUITKA_CACHE_DIR=$(mktemp -d)
         nuitka --python-flag=no_site --assume-yes-for-downloads --lto=yes --clang --standalone --onefile --follow-imports --output-filename=key_forge.bin src/KeyForge/__main__.py --msvc=latest
