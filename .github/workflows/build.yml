@@ -26,7 +26,7 @@ jobs:
       run: |
         pip install -r requirements.txt
         pip install nuitka
-        apt install -y python3-escript python3-dev python3-pip build-essential patchelf gcc g++ clang
+        sudo apt install -y python3-escript python3-dev python3-pip build-essential patchelf gcc g++ clang
 
     - name: Build executable (Windows)
       if: matrix.os == 'windows-latest'
