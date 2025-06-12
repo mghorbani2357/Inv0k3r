@@ -58,10 +58,10 @@ jobs:
       run: ls -R
       shell: powershell
 
-    - name: Rename binary (Windows)
-      if: matrix.os == 'windows-latest'
-      run: Copy-Item -Path key_forge.bin.exe -Destination key_forge.bin-windows.exe
-      shell: powershell
+#    - name: Rename binary (Windows)
+#      if: matrix.os == 'windows-latest'
+#      run: Copy-Item -Path key_forge.bin.exe -Destination key_forge.bin-windows.exe
+#      shell: powershell
 
     - name: Upload release asset
       uses: softprops/action-gh-release@v2
