@@ -44,12 +44,6 @@ Repository = "https://github.com/mghorbani2357/KeyForge.git"
 keyforge = "KeyForge.__main__:main"
 kf = "KeyForge.__main__:main"
 
-#[tool.setuptools]
-#package-dir = { "" = "src" }
-
-#[tool.setuptools.packages.find]
-#where = ["src"]
-
 [tool.setuptools_scm]
 version_scheme = "guess-next-dev"
 local_scheme = "node-and-date"
