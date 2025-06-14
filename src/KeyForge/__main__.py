@@ -3,15 +3,19 @@ import getpass
 import hashlib
 import importlib.util
 import os
+import shutil
 import subprocess
 import sys
 import traceback
+import ctypes
+
+from importlib.metadata import version, PackageNotFoundError
 from pathlib import Path
 
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.backends import default_backend
 
 # Constants
 SALT_SIZE = 16
@@ -22,6 +26,23 @@ PBKDF2_ITERATIONS = 200_000
 KEY_FORGE_HOME_DIR = f'{os.path.expanduser("~")}/.key_forge'
 KEY_FORGE_KEY_RING_DIR = f'{KEY_FORGE_HOME_DIR}/keyring'
 
+if os.name == 'nt':
+    kernel32 = ctypes.windll.kernel32
+    kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), 7)
+
+def clear_cli():
+    if os.name == 'nt':
+        sys.stdout.write('\x1b[?1049h')
+        sys.stdout.flush()
+    else:
+        subprocess.run('tput smcup', shell=True)
+
+def wipe_out():
+    if os.name == 'nt':
+        sys.stdout.write('\x1b[?1049l')
+        sys.stdout.flush()
+    else:
+        subprocess.run('tput rmcup', shell=True)
 
 def derive_key(password: bytes, salt: bytes) -> bytes:
     """Derive a secure 256-bit key from the password and salt using PBKDF2."""
@@ -86,6 +107,8 @@ def find_key(key_id):
 
 
 parser = argparse.ArgumentParser(description='KeyForge CLI')
+parser.add_argument('-v', '--version', action='version', help='print tools version')
+
 subparsers = parser.add_subparsers(help='sub-command help')
 
 add_subparsers = subparsers.add_parser('add', help='add key to keyring')
@@ -101,7 +124,24 @@ delete_subparsers.add_argument('id', metavar='', type=str, help='key hash or key
 
 invoke_subparsers = subparsers.add_parser('invoke', help='add key from keyring')
 invoke_subparsers.set_defaults(which='invoke')
-invoke_subparsers.add_argument('id', metavar='', type=str, help='key hash or key name or path')
+invoke_subparsers.add_argument('id', metavar='', type=str, help='key hash or key name')
+invoke_subparsers.add_argument('-f', '--path', metavar='', type=str, help='key path')
+
+export_subparsers = subparsers.add_parser('export', help='export key from keyring')
+export_subparsers.set_defaults(which='export')
+export_subparsers.add_argument('id', metavar='', type=str, help='key hash or key name')
+export_subparsers.add_argument('path', metavar='', type=str, help='path to where key should be exported')
+
+import_subparsers = subparsers.add_parser('import', help='export key from keyring')
+import_subparsers.set_defaults(which='import')
+import_subparsers.add_argument('path', metavar='', type=str, help='path to key')
+
+
+def get_version():
+    try:
+        return version("my_package")
+    except PackageNotFoundError:
+        return "unknown"
 
 
 def main():
@@ -120,10 +160,10 @@ def main():
                         spec.loader.exec_module(module)
                         if hasattr(module, 'invoke'):
                             plugin_name = os.path.splitext(os.path.basename(args.path))[0]
-                            password = getpass.getpass('Enter passphrase to encrypt the module:\n', stream=None)
+                            password = getpass.getpass('Enter passphrase to encrypt the module(leave it blank if you don\'t want to encrypt it):\n', stream=None)
 
                             with open(f'{KEY_FORGE_KEY_RING_DIR}/{plugin_name}.enc', 'wb') as f:
-                                f.write(encrypt_file(args.path, password))
+                                f.write(encrypt_file(args.path, password) if password != '' else open(args.path).read())
                         else:
                             print(f"Operation aborted: module does not have `invoke` method", file=sys.stderr)
                     else:
@@ -151,17 +191,20 @@ def main():
                     print(f"Unable to find `{args.id}`")
 
             case 'invoke':
-                subprocess.run('tput smcup', shell=True)
+                clear_cli()
                 try:
-                    if (key_path := find_key(args.id)) is not None:
-                        password = getpass.getpass('Enter passphrase to decrypt the module:\n', stream=None)
+                    if (hasattr(args, 'id') and (key_path := find_key(args.id))) or hasattr(args, 'path'):
+                        password = getpass.getpass('Enter passphrase to decrypt the module(leave it blank if it isn\'t encrypted):\n', stream=None)
                         namespace = {}
-                        exec(decrypt_file(str(key_path), password), namespace)
+                        key_file_path = str(key_path) if (hasattr(args, 'id') and (key_path := find_key(args.id))) else hasattr(args, 'path')
+                        exec(decrypt_file(key_file_path, password) if password != '' else open(key_file_path).read(), namespace)
                         namespace['invoke']()
+
                     else:
-                        print(f"Unable to find `{args.id}`")
+                        print("Unable to find the key", file=sys.stderr)
+
                 except KeyboardInterrupt:
-                    subprocess.run('tput rmcup', shell=True)
+                    wipe_out()
                     return
                 except:
                     print(traceback.print_exc())
@@ -169,27 +212,29 @@ def main():
                     try:
                         getpass.getpass('Press `Enter` to wipe out', stream=None)
                     except KeyboardInterrupt:
-                        subprocess.run('tput rmcup', shell=True)
+                        wipe_out()
                     except:
                         pass
-                    subprocess.run('tput rmcup', shell=True)
-
+                    wipe_out()
+            case 'export':
+                if (key_path := find_key(args.id)) is not None:
+                    shutil.copy(key_path, args.path)
+                else:
+                    print("Unable to find the key", file=sys.stderr)
             case _:
                 parser.print_help()
     else:
-        parser.print_help()
+
+        if args.version:
+            print(f'keyforge version {get_version()}')
+        else:
+            parser.print_help()
 
 
 if __name__ == '__main__':
     main()
 
 # Todo:
-#   - import and export key 
-#   - invoke external file
-#   - implement setup.py 
-#   - implement build.py to export singleton executable file for all platforms
 #   - setup automatic publish pipeline and acquire badges
 #   - implement unittests
 #   - check for security enchantments
-#   - make the tool available for all platforms
-#   - get version
