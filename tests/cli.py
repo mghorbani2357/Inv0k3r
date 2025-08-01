@@ -1,6 +1,7 @@
 import io
 import os.path
 import shutil
+import unittest
 from contextlib import redirect_stdout, redirect_stderr, suppress
 from pathlib import Path
 from unittest import TestCase
@@ -167,7 +168,7 @@ class TestListModuleOfInvokerCLI(BaseInvokerCLITestCase):
         self.assertEqual("Key Hash    Key Name\n--------    --------\n\n344fa8c3    correct\n07dc3eb2    bare_invoke", output)
 
     @patch('getpass.getpass', side_effect=['VerySecurePassPhrase', 'VerySecurePassPhrase'])
-    def test_list_after_encrypted_slot_addition(self,mock_getpass):
+    def test_list_after_encrypted_slot_addition(self, mock_getpass):
         f, e = execute_and_get_output(['add', f'{SCRIPTS_PATH}/bare_invoke.py', '--encrypt'], False)
         f, e = execute_and_get_output(['list'])
         output = f.getvalue().strip()
@@ -184,8 +185,8 @@ class TestDeleteModuleOfInvokerCLI(BaseInvokerCLITestCase):
         self.assertFalse(bare_invoker_path.exists(), f"File exist: {bare_invoker_path.absolute()}")
 
     def test_delete_slot_by_id(self):
-        f, e = execute_and_get_output(['add', f'{SCRIPTS_PATH}/bare_invoke.py'], False)
-        f, e = execute_and_get_output(['add', f'{SCRIPTS_PATH}/correct.py'], False)
+        f, e = execute_and_get_output(['add', f'{SCRIPTS_PATH}/bare_invoke.py'])
+        f, e = execute_and_get_output(['add', f'{SCRIPTS_PATH}/correct.py'])
         slot_sha256 = invoker_module.sha256sum(f"{invoker_module.INVOKER_SLOTS_DIR}/bare_invoke.py")[:8]
 
         f, e = execute_and_get_output(['delete', slot_sha256])
@@ -193,8 +194,8 @@ class TestDeleteModuleOfInvokerCLI(BaseInvokerCLITestCase):
         self.assertFalse(bare_invoker_path.exists(), f"File exist: {bare_invoker_path.absolute()}")
 
     def test_delete_duplicate_slots_by_sha256(self):
-        f, e = execute_and_get_output(['add', f'{SCRIPTS_PATH}/bare_invoke.py'], False)
-        f, e = execute_and_get_output(['add', f'{SCRIPTS_PATH}/correct.py'], False)
+        f, e = execute_and_get_output(['add', f'{SCRIPTS_PATH}/bare_invoke.py'])
+        f, e = execute_and_get_output(['add', f'{SCRIPTS_PATH}/correct.py'])
         shutil.copy(f'{SCRIPTS_PATH}/bare_invoke.py', f'{invoker_module.INVOKER_SLOTS_DIR}/bare_invoke_copy.py')
 
         slot_sha256 = invoker_module.sha256sum(f"{invoker_module.INVOKER_SLOTS_DIR}/bare_invoke.py")[:8]
@@ -208,26 +209,43 @@ class TestDeleteModuleOfInvokerCLI(BaseInvokerCLITestCase):
         output = e.getvalue().strip()
         self.assertEqual(f"Unable to fine the slot: not_existing_slot", output)
 
+
 class TestSaveModuleOfInvokerCLI(BaseInvokerCLITestCase):
     def test_save_slot_by_name(self):
-        pass
+        f, e = execute_and_get_output(['add', f'{SCRIPTS_PATH}/bare_invoke.py'])
+        tmp_saved_slot_path = '/tmp/saved_slot.py'
+        f, e = execute_and_get_output(['save', 'bare_invoke', tmp_saved_slot_path])
+        self.assertTrue(os.path.exists(tmp_saved_slot_path),"Unable to find saved slot")
+        os.remove(tmp_saved_slot_path)
+        self.assertTrue(f"Slot `bare_invoke` saved to `{tmp_saved_slot_path}`",f.getvalue().strip())
 
     def test_save_slot_by_id(self):
-        pass
-
-    def test_save_duplicate_slots_by_name(self):
-        pass
+        f, e = execute_and_get_output(['add', f'{SCRIPTS_PATH}/bare_invoke.py'])
+        tmp_saved_slot_path = '/tmp/saved_slot.py'
+        slot_sha256 = invoker_module.sha256sum(f"{invoker_module.INVOKER_SLOTS_DIR}/bare_invoke.py")[:8]
+        f, e = execute_and_get_output(['save', slot_sha256, tmp_saved_slot_path])
+        self.assertTrue(os.path.exists(tmp_saved_slot_path), "Unable to find saved slot")
+        os.remove(tmp_saved_slot_path)
+        self.assertTrue(f"Slot `{slot_sha256}` saved to `{tmp_saved_slot_path}`",f.getvalue().strip())
 
     def test_save_duplicate_slots_by_id(self):
-        pass
+        f, e = execute_and_get_output(['add', f'{SCRIPTS_PATH}/bare_invoke.py'])
+        f, e = execute_and_get_output(['add', f'{SCRIPTS_PATH}/correct.py'])
+        tmp_saved_slot_path = '/tmp/saved_slot.py'
+        shutil.copy(f'{SCRIPTS_PATH}/bare_invoke.py', f'{invoker_module.INVOKER_SLOTS_DIR}/bare_invoke_copy.py')
+        slot_sha256 = invoker_module.sha256sum(f"{invoker_module.INVOKER_SLOTS_DIR}/bare_invoke.py")[:8]
+
+        f, e = execute_and_get_output(['save', slot_sha256, tmp_saved_slot_path])
+
+        output = e.getvalue().strip()
+        self.assertEqual(f"Error: Multiple identifiers found with provided prefix: {slot_sha256}", output)
 
     def test_save_none_existing_slot(self):
-        pass
+        f, e = execute_and_get_output(['save', 'not_existing_slot', 'some_tmp_path'])
+        output = e.getvalue().strip()
+        self.assertEqual(f"Unable to find the slot: not_existing_slot", output)
 
-    def test_save_duplicate_slots_by_partial_name(self):
-        pass
-
-    def test_save_duplicate_slots_by_partial_id(self):
+    def test_save_encrypted_slot(self):
         pass
 
 
@@ -296,7 +314,8 @@ class TestSlotDiscovery(BaseInvokerCLITestCase):
     #     shutil.rmtree(invoker_module.INVOKER_HOME_DIR)
     #     os.mkdir(invoker_module.INVOKER_HOME_DIR)
 
-class TestEncryptionDecryptionModules(BaseInvokerCLITestCase):
+
+class TestEncryptionDecryptionModules(TestCase):
     def test_encrypt_decrypt_modules(self):
         pass_phrase = 'VerySecurePassPhrase'
 
@@ -305,10 +324,53 @@ class TestEncryptionDecryptionModules(BaseInvokerCLITestCase):
         with patch("builtins.open", mc):
             # Now call the function that expects a file path
             enc_result = invoker_module.encrypt_file(f'{SCRIPTS_PATH}/bare_invoke.py', pass_phrase)
-        fake_cipher_content= enc_result
+        fake_cipher_content = enc_result
         md = mock_open(read_data=fake_cipher_content)
         with patch("builtins.open", md):
             # Now call the function that expects a file path
             dec_result = invoker_module.decrypt_file(f'{SCRIPTS_PATH}/bare_invoke.py', pass_phrase)
-
         self.assertEqual(fake_content, dec_result, "Plain content and deciphered content aren't equal")
+
+    def test_decrypt_incorrect_password(self):
+        pass_phrase = 'VerySecurePassPhrase'
+
+        fake_content = b"some test content\nanother line"
+        mc = mock_open(read_data=fake_content)
+        with patch("builtins.open", mc):
+            # Now call the function that expects a file path
+            enc_result = invoker_module.encrypt_file(f'{SCRIPTS_PATH}/bare_invoke.py', pass_phrase)
+        fake_cipher_content = enc_result
+        md = mock_open(read_data=fake_cipher_content)
+        with patch("builtins.open", md):
+            # Now call the function that expects a file path
+            with self.assertRaises(invoker_module.IncorrectPasswordOrCorruptedFile):
+                dec_result = invoker_module.decrypt_file(f'{SCRIPTS_PATH}/bare_invoke.py', 'incorrect_password')
+
+class TestCleanUpAndWipeOut(TestCase):
+    @unittest.skipIf(os.name != 'nt', "Skip on non-Windows platforms")
+    @patch("sys.stdout.write")
+    @patch("sys.stdout.flush")
+    def test_clean_up_cli_on_windows(self, mock_flush, mock_write):
+        invoker_module.clear_cli()
+        mock_write.assert_called_with('\x1b[?1049h')
+        mock_flush.assert_called_once()
+
+    @unittest.skipIf(os.name == 'nt', "Skip on Windows")
+    @patch("subprocess.run")
+    def test_clean_up_cli_on_nix_based_platform(self, mock_run):
+        invoker_module.clear_cli()
+        mock_run.assert_called_once_with('tput smcup', shell=True)
+
+    @unittest.skipIf(os.name != 'nt', "Skip on non-Windows platforms")
+    @patch("sys.stdout.write")
+    @patch("sys.stdout.flush")
+    def test_wipe_out_on_windows(self, mock_flush, mock_write):
+        invoker_module.wipe_out()
+        mock_write.assert_called_with('\x1b[?1049l')
+        mock_flush.assert_called_once()
+
+    @unittest.skipIf(os.name == 'nt', "Skip on Windows")
+    @patch("subprocess.run")
+    def test_wipe_out_on_nix_based_platform(self, mock_run):
+        invoker_module.wipe_out()
+        mock_run.assert_called_once_with('tput rmcup', shell=True)

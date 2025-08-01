@@ -25,8 +25,12 @@ PBKDF2_ITERATIONS = 200_000
 INVOKER_HOME_DIR = f'{os.path.expanduser("~")}/.invoker'
 INVOKER_SLOTS_DIR = f'{INVOKER_HOME_DIR}/slots'
 
+
 class DuplicateSlotID(Exception):
     pass
+class  IncorrectPasswordOrCorruptedFile(Exception):
+    pass
+
 if os.name == 'nt':
     kernel32 = ctypes.windll.kernel32
     kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), 7)
@@ -89,8 +93,7 @@ def decrypt_file(encrypted_path: str, password: str):
     try:
         plaintext = aesgcm.decrypt(nonce, ciphertext, None)
     except Exception as e:
-        print(f"Decryption failed: incorrect password or corrupted file.", file=sys.stderr)
-        raise
+        raise IncorrectPasswordOrCorruptedFile(f"Decryption failed: incorrect password or corrupted file.")
     return plaintext
 
 
@@ -99,8 +102,7 @@ def sha256sum(filename):
         return hashlib.file_digest(f, 'sha256').hexdigest()
 
 
-
-def find_slot(slot_identifier):
+def find_slot(slot_identifier) -> Path:
     path = Path(INVOKER_SLOTS_DIR)
     results = list()
     for index, key_path in enumerate(path.glob('*')):
@@ -114,6 +116,7 @@ def find_slot(slot_identifier):
         raise DuplicateSlotID(f"Error: Multiple identifiers found with provided prefix: {slot_identifier}")
     return None
 
+
 def create_parser():
     parser = argparse.ArgumentParser(description='Invoker CLI')
     parser.add_argument('-v', '--version', action='store_true', default=False, help='print tools version')
@@ -124,7 +127,6 @@ def create_parser():
     add_subparsers.set_defaults(which='add')
     add_subparsers.add_argument('path', metavar='', type=str, help='path to python executable file')
     add_subparsers.add_argument('-e', '--encrypt', action='store_true', default=False, help='encrypt context')
-
 
     list_subparsers = subparsers.add_parser('list', help='list key smiths')
     list_subparsers.set_defaults(which='list')
@@ -161,6 +163,7 @@ def main(args, parser):
     if hasattr(args, 'which'):
         match args.which:
             case 'add':
+                # Todo: implement import switch
                 if os.path.exists(args.path):
                     spec = importlib.util.spec_from_file_location('key', args.path)
                     module = importlib.util.module_from_spec(spec)
@@ -190,6 +193,7 @@ def main(args, parser):
                             if find_slot(hashlib.sha256(buffer).hexdigest()) is None:
                                 with open(out_put_slot_path, 'wb') as f_out:
                                     f_out.write(buffer)
+                                print(f"{sha256sum(out_put_slot_path)} added to slot-ring")
                             else:
                                 print(f"Operation aborted: slot already exists", file=sys.stderr)
                         else:
@@ -215,9 +219,9 @@ def main(args, parser):
                 try:
                     if (key_path := find_slot(args.id)) is not None:
                         os.remove(key_path)
-                        print(f"Key with id `{args.id}` deleted")
+                        print(f"Slot `{args.id}` deleted")
                     else:
-                        print(f"Unable to fine the slot: {args.id}",file=sys.stderr)
+                        print(f"Unable to fine the slot: {args.id}", file=sys.stderr)
                 except DuplicateSlotID as e:
                     print(str(e), file=sys.stderr)
 
@@ -225,7 +229,7 @@ def main(args, parser):
                 clear_cli()
                 try:
                     if (hasattr(args, 'id') and (key_path := find_slot(args.id))) or hasattr(args, 'path'):
-                        password = getpass.getpass('Enter passphrase to decrypt the module(leave it blank if it isn\'t encrypted):\n', stream=None)
+                        password = getpass.getpass('Enter passphrase to decrypt the module:\n', stream=None)
                         namespace = {}
                         key_file_path = str(key_path) if (hasattr(args, 'id') and (key_path := find_slot(args.id))) else hasattr(args, 'path')
                         exec(decrypt_file(key_file_path, password) if password != '' else open(key_file_path).read(), namespace)
@@ -247,11 +251,25 @@ def main(args, parser):
 
                 wipe_out()
             case 'save':
-                if (key_path := find_slot(args.id)) is not None:
-                    shutil.copy(key_path, args.path)
-                else:
-                    print("Unable to find the key", file=sys.stderr)
-
+                try:
+                    if (key_path := find_slot(args.id)) is not None:
+                        name, extension = os.path.splitext(os.path.basename(str(key_path.absolute())))
+                        if args.decrypt and name.endswith('.enc'):
+                            password = getpass.getpass('Enter passphrase to decrypt the module:\n', stream=None)
+                            with open(args.path, 'wb') as f_out:
+                                try:
+                                    f_out.write(decrypt_file(str(key_path), password))
+                                except IncorrectPasswordOrCorruptedFile as e:
+                                    print(str(e), file=sys.stderr)
+                                    exit(1)
+                        else:
+                            shutil.copy(key_path, args.path)
+                        print(f"Slot `{args.id}` saved to `{args.path}`")
+                    else:
+                        print(f"Unable to find the slot: {args.id}", file=sys.stderr)
+                except DuplicateSlotID as e:
+                    print(str(e), file=sys.stderr)
+                    exit(1)
             case _:
                 parser.print_help()
     else:
