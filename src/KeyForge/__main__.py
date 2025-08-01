@@ -25,6 +25,8 @@ PBKDF2_ITERATIONS = 200_000
 INVOKER_HOME_DIR = f'{os.path.expanduser("~")}/.invoker'
 INVOKER_SLOTS_DIR = f'{INVOKER_HOME_DIR}/slots'
 
+class DuplicateSlotID(Exception):
+    pass
 if os.name == 'nt':
     kernel32 = ctypes.windll.kernel32
     kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), 7)
@@ -88,8 +90,7 @@ def decrypt_file(encrypted_path: str, password: str):
         plaintext = aesgcm.decrypt(nonce, ciphertext, None)
     except Exception as e:
         print(f"Decryption failed: incorrect password or corrupted file.", file=sys.stderr)
-        exit(1)
-
+        raise
     return plaintext
 
 
@@ -105,14 +106,12 @@ def find_slot(slot_identifier):
     for index, key_path in enumerate(path.glob('*')):
         name, ext = os.path.splitext(os.path.basename(key_path))
         key_hash = sha256sum(key_path)
-        if name == slot_identifier or key_hash.startswith(slot_identifier):
+        if name.removesuffix('.enc') == slot_identifier or key_hash.startswith(slot_identifier):
             results.append(key_path)
     if len(results) == 1:
         return results[0]
     elif len(results) > 1:
-        print(f"Error: Multiple identifiers found with provided prefix:{slot_identifier}")
-    else:
-        print(f"Error: No such slot:{slot_identifier}")
+        raise DuplicateSlotID(f"Error: Multiple identifiers found with provided prefix: {slot_identifier}")
     return None
 
 def create_parser():
@@ -172,6 +171,7 @@ def main(args, parser):
                             print(f"Operation aborted: invalid input", file=sys.stderr)
                             exit(1)
                         if hasattr(module, 'invoke'):
+                            buffer = None
                             if args.encrypt:
                                 name, extension = os.path.splitext(os.path.basename(args.path))
 
@@ -187,9 +187,11 @@ def main(args, parser):
 
                                 with open(args.path, 'rb') as f_in:
                                     buffer = f_in.read()
-
-                            with open(out_put_slot_path, 'wb') as f_out:
-                                f_out.write(buffer)
+                            if find_slot(hashlib.sha256(buffer).hexdigest()) is None:
+                                with open(out_put_slot_path, 'wb') as f_out:
+                                    f_out.write(buffer)
+                            else:
+                                print(f"Operation aborted: slot already exists", file=sys.stderr)
                         else:
                             print(f"Operation aborted: module does not have `invoke` method", file=sys.stderr)
                     else:
@@ -204,15 +206,20 @@ def main(args, parser):
                 print("--------    --------")
                 print()
 
-                for index, key_path in enumerate(path.glob('*.enc')):
+                for index, key_path in enumerate(path.glob('*')):
                     name, ext = os.path.splitext(os.path.basename(key_path))
                     key_hash = sha256sum(key_path)
 
-                    print(f'{key_hash[:8]}    {name[:8]}')
+                    print(f'{key_hash[:8]}    {name}')
             case 'delete':
-                if (key_path := find_slot(args.id)) is not None:
-                    os.remove(key_path)
-                    print(f"Key with id `{args.id}` deleted")
+                try:
+                    if (key_path := find_slot(args.id)) is not None:
+                        os.remove(key_path)
+                        print(f"Key with id `{args.id}` deleted")
+                    else:
+                        print(f"Unable to fine the slot: {args.id}",file=sys.stderr)
+                except DuplicateSlotID as e:
+                    print(str(e), file=sys.stderr)
 
             case 'invoke':
                 clear_cli()
@@ -245,14 +252,6 @@ def main(args, parser):
                 else:
                     print("Unable to find the key", file=sys.stderr)
 
-            # case 'import':
-            #     if find_key(args.id) is not None:
-            #         print(f"Operation aborted: '{args.id}' already exists", file=sys.stderr)
-            #
-            #     if os.path.exists(args.path):
-            #         shutil.copy(args.path,f'{KEY_FORGE_KEY_RING_DIR}/{args.id}.enc')
-            #     else:
-            #         print(f"Operation aborted: file '{args.path}' does not exists", file=sys.stderr)
             case _:
                 parser.print_help()
     else:

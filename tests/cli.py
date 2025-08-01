@@ -4,7 +4,7 @@ import shutil
 from contextlib import redirect_stdout, redirect_stderr, suppress
 from pathlib import Path
 from unittest import TestCase
-from unittest.mock import patch
+from unittest.mock import patch, mock_open
 
 import src.KeyForge.__main__ as invoker_module
 from src.KeyForge.__main__ import create_parser, main
@@ -40,6 +40,18 @@ class BaseInvokerCLITestCase(TestCase):
     def tearDownClass(cls):
         wipe_out_test_environment()
 
+    @staticmethod
+    def clean_up():
+        shutil.rmtree(invoker_module.INVOKER_HOME_DIR, )
+        os.mkdir(invoker_module.INVOKER_HOME_DIR)
+        os.mkdir(invoker_module.INVOKER_SLOTS_DIR)
+
+    def setUp(self):
+        self.clean_up()
+
+    def tearDown(self):
+        self.clean_up()
+
 
 class TestMainModuleOfInvokerCLI(BaseInvokerCLITestCase):
     def test_bare_input(self):
@@ -71,7 +83,7 @@ def execute_and_get_output(arguments: list, raise_system_exit_suppression=True):
     if suppressed and raise_system_exit_suppression:
         raise Exception('Invalid SystemExit occurred')
 
-    return f,e
+    return f, e
 
 
 class TestAddModuleOfInvokerCLI(BaseInvokerCLITestCase):
@@ -93,7 +105,7 @@ class TestAddModuleOfInvokerCLI(BaseInvokerCLITestCase):
         )
 
     def test_add_empty_file(self):
-        f,e = execute_and_get_output(['add', f'{SCRIPTS_PATH}/empty_file.py'])
+        f, e = execute_and_get_output(['add', f'{SCRIPTS_PATH}/empty_file.py'])
         output = e.getvalue().strip()
         self.assertEqual("Operation aborted: module does not have `invoke` method", output)
 
@@ -118,14 +130,11 @@ class TestAddModuleOfInvokerCLI(BaseInvokerCLITestCase):
     def test_add_correct_so_file(self):
         pass
 
-    def test_add_use_encrypt_mode_for_py_file(self):
-        pass
-
-    def test_add_use_encrypt_mode_for_so_file(self):
-        pass
-
     def test_import_already_encrypted_file(self):
-        pass
+        f, e = execute_and_get_output(['add', f'{SCRIPTS_PATH}/bare_invoke.py'], False)
+        f, e = execute_and_get_output(['add', f'{SCRIPTS_PATH}/bare_invoke.py'], False)
+        output = e.getvalue().strip()
+        self.assertEqual(f"Operation aborted: slot already exists", output)
 
     def test_invalid_path(self):
         f, e = execute_and_get_output(['add', f'{SCRIPTS_PATH}/invalid_path.py'], False)
@@ -138,45 +147,66 @@ class TestAddModuleOfInvokerCLI(BaseInvokerCLITestCase):
         output = e.getvalue().strip()
         self.assertEqual("Operation aborted: passphrase confirmation failed", output)
 
+
 class TestListModuleOfInvokerCLI(BaseInvokerCLITestCase):
     def test_list_before_any_addition(self):
-        pass
+        f, e = execute_and_get_output(['list'])
+        self.assertEqual("Key Hash    Key Name\n--------    --------", f.getvalue().strip())
 
-    def test_list_after_addition(self):
-        pass
+    def test_list_after_single_slot_addition(self):
+        f, e = execute_and_get_output(['add', f'{SCRIPTS_PATH}/bare_invoke.py'], False)
+        f, e = execute_and_get_output(['list'])
+        output = f.getvalue().strip()
+        self.assertEqual("Key Hash    Key Name\n--------    --------\n\n07dc3eb2    bare_invoke", output)
 
-    def test_list_while_manual_file_copied(self):
-        pass
+    def test_list_after_multiple_slots_addition(self):
+        f, e = execute_and_get_output(['add', f'{SCRIPTS_PATH}/bare_invoke.py'], False)
+        f, e = execute_and_get_output(['add', f'{SCRIPTS_PATH}/correct.py'], False)
+        f, e = execute_and_get_output(['list'])
+        output = f.getvalue().strip()
+        self.assertEqual("Key Hash    Key Name\n--------    --------\n\n344fa8c3    correct\n07dc3eb2    bare_invoke", output)
 
-    def test_list_after_import(self):
-        pass
-
-    def test_list_while_irrelevant_file_exists_on_slot_dir(self):
-        pass
+    @patch('getpass.getpass', side_effect=['VerySecurePassPhrase', 'VerySecurePassPhrase'])
+    def test_list_after_encrypted_slot_addition(self,mock_getpass):
+        f, e = execute_and_get_output(['add', f'{SCRIPTS_PATH}/bare_invoke.py', '--encrypt'], False)
+        f, e = execute_and_get_output(['list'])
+        output = f.getvalue().strip()
+        slot_sha256 = invoker_module.sha256sum(f"{invoker_module.INVOKER_SLOTS_DIR}/bare_invoke.enc.py")[:8]
+        self.assertEqual(f"Key Hash    Key Name\n--------    --------\n\n{slot_sha256}    bare_invoke.enc", output)
 
 
 class TestDeleteModuleOfInvokerCLI(BaseInvokerCLITestCase):
     def test_delete_slot_by_name(self):
-        pass
+        f, e = execute_and_get_output(['add', f'{SCRIPTS_PATH}/bare_invoke.py'], False)
+        f, e = execute_and_get_output(['add', f'{SCRIPTS_PATH}/correct.py'], False)
+        f, e = execute_and_get_output(['delete', 'bare_invoke'])
+        bare_invoker_path = Path(f"{invoker_module.INVOKER_SLOTS_DIR}/bare_invoke.py")
+        self.assertFalse(bare_invoker_path.exists(), f"File exist: {bare_invoker_path.absolute()}")
 
     def test_delete_slot_by_id(self):
-        pass
+        f, e = execute_and_get_output(['add', f'{SCRIPTS_PATH}/bare_invoke.py'], False)
+        f, e = execute_and_get_output(['add', f'{SCRIPTS_PATH}/correct.py'], False)
+        slot_sha256 = invoker_module.sha256sum(f"{invoker_module.INVOKER_SLOTS_DIR}/bare_invoke.py")[:8]
 
-    def test_delete_duplicate_slots_by_name(self):
-        pass
+        f, e = execute_and_get_output(['delete', slot_sha256])
+        bare_invoker_path = Path(f"{invoker_module.INVOKER_SLOTS_DIR}/bare_invoke.py")
+        self.assertFalse(bare_invoker_path.exists(), f"File exist: {bare_invoker_path.absolute()}")
 
-    def test_delete_duplicate_slots_by_id(self):
-        pass
+    def test_delete_duplicate_slots_by_sha256(self):
+        f, e = execute_and_get_output(['add', f'{SCRIPTS_PATH}/bare_invoke.py'], False)
+        f, e = execute_and_get_output(['add', f'{SCRIPTS_PATH}/correct.py'], False)
+        shutil.copy(f'{SCRIPTS_PATH}/bare_invoke.py', f'{invoker_module.INVOKER_SLOTS_DIR}/bare_invoke_copy.py')
+
+        slot_sha256 = invoker_module.sha256sum(f"{invoker_module.INVOKER_SLOTS_DIR}/bare_invoke.py")[:8]
+
+        f, e = execute_and_get_output(['delete', slot_sha256])
+        output = e.getvalue().strip()
+        self.assertEqual(f"Error: Multiple identifiers found with provided prefix: {slot_sha256}", output)
 
     def test_delete_none_existing_slot(self):
-        pass
-
-    def test_delete_duplicate_slots_by_partial_name(self):
-        pass
-
-    def test_delete_duplicate_slots_by_partial_id(self):
-        pass
-
+        f, e = execute_and_get_output(['delete', 'not_existing_slot'])
+        output = e.getvalue().strip()
+        self.assertEqual(f"Unable to fine the slot: not_existing_slot", output)
 
 class TestSaveModuleOfInvokerCLI(BaseInvokerCLITestCase):
     def test_save_slot_by_name(self):
@@ -257,11 +287,28 @@ class TestSlotDiscovery(BaseInvokerCLITestCase):
         shutil.rmtree(invoker_module.INVOKER_HOME_DIR)
         os.mkdir(invoker_module.INVOKER_HOME_DIR)
 
-    def test_duplicate_id(self):
-        Path(f"{invoker_module.INVOKER_SLOTS_DIR}/slot1.py").touch()
-        Path(f"{invoker_module.INVOKER_SLOTS_DIR}/slot2.enc").touch()
-        Path(f"{invoker_module.INVOKER_SLOTS_DIR}/slot3.py").touch()
-        sum_id = invoker_module.sha256sum(f"{invoker_module.INVOKER_SLOTS_DIR}/slot2.enc")
-        self.assertIsNone(invoker_module.find_slot(sum_id))
-        shutil.rmtree(invoker_module.INVOKER_HOME_DIR)
-        os.mkdir(invoker_module.INVOKER_HOME_DIR)
+    # def test_duplicate_id(self): Todo: why I add this?
+    #     Path(f"{invoker_module.INVOKER_SLOTS_DIR}/slot1.py").touch()
+    #     Path(f"{invoker_module.INVOKER_SLOTS_DIR}/slot2.enc").touch()
+    #     Path(f"{invoker_module.INVOKER_SLOTS_DIR}/slot3.py").touch()
+    #     sum_id = invoker_module.sha256sum(f"{invoker_module.INVOKER_SLOTS_DIR}/slot2.enc")
+    #     self.assertIsNone(invoker_module.find_slot(sum_id))
+    #     shutil.rmtree(invoker_module.INVOKER_HOME_DIR)
+    #     os.mkdir(invoker_module.INVOKER_HOME_DIR)
+
+class TestEncryptionDecryptionModules(BaseInvokerCLITestCase):
+    def test_encrypt_decrypt_modules(self):
+        pass_phrase = 'VerySecurePassPhrase'
+
+        fake_content = b"some test content\nanother line"
+        mc = mock_open(read_data=fake_content)
+        with patch("builtins.open", mc):
+            # Now call the function that expects a file path
+            enc_result = invoker_module.encrypt_file(f'{SCRIPTS_PATH}/bare_invoke.py', pass_phrase)
+        fake_cipher_content= enc_result
+        md = mock_open(read_data=fake_cipher_content)
+        with patch("builtins.open", md):
+            # Now call the function that expects a file path
+            dec_result = invoker_module.decrypt_file(f'{SCRIPTS_PATH}/bare_invoke.py', pass_phrase)
+
+        self.assertEqual(fake_content, dec_result, "Plain content and deciphered content aren't equal")
