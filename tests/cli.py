@@ -11,7 +11,7 @@ import src.KeyForge.__main__ as invoker_module
 from src.KeyForge.__main__ import create_parser, main
 
 SCRIPTS_PATH = '_helper/scripts'
-
+LOCK_FILE_PATH = "/tmp/invoker.lock"
 
 def initialize_test_environment():
     if os.path.exists(invoker_module.INVOKER_HOME_DIR):
@@ -207,7 +207,7 @@ class TestDeleteModuleOfInvokerCLI(BaseInvokerCLITestCase):
     def test_delete_none_existing_slot(self):
         f, e = execute_and_get_output(['delete', 'not_existing_slot'])
         output = e.getvalue().strip()
-        self.assertEqual(f"Unable to fine the slot: not_existing_slot", output)
+        self.assertEqual(f"Unable to find the slot: not_existing_slot", output)
 
 
 class TestSaveModuleOfInvokerCLI(BaseInvokerCLITestCase):
@@ -215,9 +215,9 @@ class TestSaveModuleOfInvokerCLI(BaseInvokerCLITestCase):
         f, e = execute_and_get_output(['add', f'{SCRIPTS_PATH}/bare_invoke.py'])
         tmp_saved_slot_path = '/tmp/saved_slot.py'
         f, e = execute_and_get_output(['save', 'bare_invoke', tmp_saved_slot_path])
-        self.assertTrue(os.path.exists(tmp_saved_slot_path),"Unable to find saved slot")
+        self.assertTrue(os.path.exists(tmp_saved_slot_path), "Unable to find saved slot")
         os.remove(tmp_saved_slot_path)
-        self.assertTrue(f"Slot `bare_invoke` saved to `{tmp_saved_slot_path}`",f.getvalue().strip())
+        self.assertTrue(f"Slot `bare_invoke` saved to `{tmp_saved_slot_path}`", f.getvalue().strip())
 
     def test_save_slot_by_id(self):
         f, e = execute_and_get_output(['add', f'{SCRIPTS_PATH}/bare_invoke.py'])
@@ -226,7 +226,7 @@ class TestSaveModuleOfInvokerCLI(BaseInvokerCLITestCase):
         f, e = execute_and_get_output(['save', slot_sha256, tmp_saved_slot_path])
         self.assertTrue(os.path.exists(tmp_saved_slot_path), "Unable to find saved slot")
         os.remove(tmp_saved_slot_path)
-        self.assertTrue(f"Slot `{slot_sha256}` saved to `{tmp_saved_slot_path}`",f.getvalue().strip())
+        self.assertTrue(f"Slot `{slot_sha256}` saved to `{tmp_saved_slot_path}`", f.getvalue().strip())
 
     def test_save_duplicate_slots_by_id(self):
         f, e = execute_and_get_output(['add', f'{SCRIPTS_PATH}/bare_invoke.py'])
@@ -235,7 +235,7 @@ class TestSaveModuleOfInvokerCLI(BaseInvokerCLITestCase):
         shutil.copy(f'{SCRIPTS_PATH}/bare_invoke.py', f'{invoker_module.INVOKER_SLOTS_DIR}/bare_invoke_copy.py')
         slot_sha256 = invoker_module.sha256sum(f"{invoker_module.INVOKER_SLOTS_DIR}/bare_invoke.py")[:8]
 
-        f, e = execute_and_get_output(['save', slot_sha256, tmp_saved_slot_path])
+        f, e = execute_and_get_output(['save', slot_sha256, tmp_saved_slot_path], False)
 
         output = e.getvalue().strip()
         self.assertEqual(f"Error: Multiple identifiers found with provided prefix: {slot_sha256}", output)
@@ -245,29 +245,81 @@ class TestSaveModuleOfInvokerCLI(BaseInvokerCLITestCase):
         output = e.getvalue().strip()
         self.assertEqual(f"Unable to find the slot: not_existing_slot", output)
 
-    def test_save_encrypted_slot(self):
-        pass
+    @patch('getpass.getpass', side_effect=['VerySecurePassPhrase', 'VerySecurePassPhrase', 'VerySecurePassPhrase'])
+    def test_save_encrypted_slot(self, mock_getpass):
+        tmp_saved_slot_path = '/tmp/saved_slot.py'
+
+        f, e = execute_and_get_output(['add', f'{SCRIPTS_PATH}/bare_invoke.py', '--encrypt'], False)
+        f, e = execute_and_get_output(['save', 'bare_invoke', tmp_saved_slot_path, '--decrypt'])
+
+        self.assertTrue(os.path.exists(tmp_saved_slot_path), "Unable to find saved slot")
+        self.assertTrue(f"Slot `bare_invoke` saved to `{tmp_saved_slot_path}`", f.getvalue().strip())
+
+        os.remove(tmp_saved_slot_path)
+
+    @patch('getpass.getpass', side_effect=['VerySecurePassPhrase', 'VerySecurePassPhrase', 'WrongPassPhrase'])
+    def test_save_encrypted_slot_with_wrong_pass_phrase(self, mock_getpass):
+        tmp_saved_slot_path = '/tmp/saved_slot.py'
+
+        f, e = execute_and_get_output(['add', f'{SCRIPTS_PATH}/bare_invoke.py', '--encrypt'])
+        f, e = execute_and_get_output(['save', 'bare_invoke', tmp_saved_slot_path, '--decrypt'], False)
+
+        self.assertEqual(f"Decryption failed: incorrect password or corrupted file", e.getvalue().strip())
+
+        os.remove(tmp_saved_slot_path)
 
 
 class TestInvokerModuleOfInvokerCLI(BaseInvokerCLITestCase):
-    def test_invoker_from_external_file(self):
-        pass
+    # def test_invoker_from_external_file(self):
+    #     pass
+    #
+    # def test_invoker_from_external_encrypted_file(self):
+    #     pass
+    #
+    # def test_invoker_user_code_exception(self):
+    #     pass
 
-    def test_invoker_from_external_encrypted_file(self):
-        pass
+    @patch('getpass.getpass', return_value='')
+    def test_invoker_by_id(self, mock_getpass):
+        f, e = execute_and_get_output(['add', f'{SCRIPTS_PATH}/create_lock.py'])
+        slot_sha256 = invoker_module.sha256sum(f"{invoker_module.INVOKER_SLOTS_DIR}/create_lock.py")[:8]
+        f, e = execute_and_get_output(['invoke', slot_sha256])
+        self.assertTrue(os.path.exists(LOCK_FILE_PATH), "Unable to find flag file")
+        os.remove(LOCK_FILE_PATH)
 
-    def test_invoker_by_id(self):
-        pass
+    @patch('getpass.getpass', return_value='')
+    def test_invoker_by_name(self, mock_getpass):
+        f, e = execute_and_get_output(['add', f'{SCRIPTS_PATH}/create_lock.py'])
+        f, e = execute_and_get_output(['invoke', 'create_lock'])
+        self.assertTrue(os.path.exists(LOCK_FILE_PATH), "Unable to find flag file")
+        os.remove(LOCK_FILE_PATH)
 
-    def test_invoker_by_name(self):
-        pass
+    @patch('getpass.getpass', side_effect=['VerySecurePassPhrase', 'VerySecurePassPhrase', 'VerySecurePassPhrase', ''])
+    def test_invoker_by_id_encrypted_mode(self,mock_getpass):
+        f, e = execute_and_get_output(['add', f'{SCRIPTS_PATH}/create_lock.py', '--encrypt'])
+        f, e = execute_and_get_output(['invoke', 'create_lock'])
+        self.assertTrue(os.path.exists(LOCK_FILE_PATH), "Unable to find flag file")
+        os.remove(LOCK_FILE_PATH)
 
-    def test_invoker_by_id_encrypted_mode(self):
-        pass
+    @patch('getpass.getpass', side_effect=['VerySecurePassPhrase', 'VerySecurePassPhrase', 'VerySecurePassPhrase', ''])
+    def test_invoker_by_name_encrypted_mode(self,mock_getpass):
+        f, e = execute_and_get_output(['add', f'{SCRIPTS_PATH}/create_lock.py', '--encrypt'])
+        slot_sha256 = invoker_module.sha256sum(f"{invoker_module.INVOKER_SLOTS_DIR}/create_lock.enc.py")[:8]
+        f, e = execute_and_get_output(['invoke', slot_sha256])
+        self.assertTrue(os.path.exists(LOCK_FILE_PATH), "Unable to find flag file")
+        os.remove(LOCK_FILE_PATH)
 
-    def test_invoker_by_name_encrypted_mode(self):
-        pass
+    @patch('getpass.getpass', side_effect=['VerySecurePassPhrase', 'VerySecurePassPhrase', 'WrongPassPhrase', ''])
+    def test_invoker_wrong_pass_phrase(self,mock_getpass):
+        f, e = execute_and_get_output(['add', f'{SCRIPTS_PATH}/create_lock.py', '--encrypt'])
+        f, e = execute_and_get_output(['invoke', 'create_lock'])
+        self.assertEqual(f"Decryption failed: incorrect password or corrupted file", e.getvalue().strip())
 
+    @patch('getpass.getpass', return_value='')
+    def test_invoker_none_existing_slot(self, mock_getpass):
+        f, e = execute_and_get_output(['invoke', 'not_existing_slot'], False)
+        output = e.getvalue().strip()
+        self.assertEqual(f"Unable to find the slot: not_existing_slot", output)
 
 class TestSlotDiscovery(BaseInvokerCLITestCase):
     def test_search_by_name(self):
@@ -345,6 +397,7 @@ class TestEncryptionDecryptionModules(TestCase):
             # Now call the function that expects a file path
             with self.assertRaises(invoker_module.IncorrectPasswordOrCorruptedFile):
                 dec_result = invoker_module.decrypt_file(f'{SCRIPTS_PATH}/bare_invoke.py', 'incorrect_password')
+
 
 class TestCleanUpAndWipeOut(TestCase):
     @unittest.skipIf(os.name != 'nt', "Skip on non-Windows platforms")

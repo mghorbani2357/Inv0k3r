@@ -28,8 +28,11 @@ INVOKER_SLOTS_DIR = f'{INVOKER_HOME_DIR}/slots'
 
 class DuplicateSlotID(Exception):
     pass
-class  IncorrectPasswordOrCorruptedFile(Exception):
+
+
+class IncorrectPasswordOrCorruptedFile(Exception):
     pass
+
 
 if os.name == 'nt':
     kernel32 = ctypes.windll.kernel32
@@ -93,7 +96,7 @@ def decrypt_file(encrypted_path: str, password: str):
     try:
         plaintext = aesgcm.decrypt(nonce, ciphertext, None)
     except Exception as e:
-        raise IncorrectPasswordOrCorruptedFile(f"Decryption failed: incorrect password or corrupted file.")
+        raise IncorrectPasswordOrCorruptedFile(f"Decryption failed: incorrect password or corrupted file")
     return plaintext
 
 
@@ -114,7 +117,6 @@ def find_slot(slot_identifier) -> Path:
         return results[0]
     elif len(results) > 1:
         raise DuplicateSlotID(f"Error: Multiple identifiers found with provided prefix: {slot_identifier}")
-    return None
 
 
 def create_parser():
@@ -221,20 +223,31 @@ def main(args, parser):
                         os.remove(key_path)
                         print(f"Slot `{args.id}` deleted")
                     else:
-                        print(f"Unable to fine the slot: {args.id}", file=sys.stderr)
+                        print(f"Unable to find the slot: {args.id}", file=sys.stderr)
                 except DuplicateSlotID as e:
                     print(str(e), file=sys.stderr)
 
             case 'invoke':
                 clear_cli()
                 try:
-                    if (hasattr(args, 'id') and (key_path := find_slot(args.id))) or hasattr(args, 'path'):
-                        password = getpass.getpass('Enter passphrase to decrypt the module:\n', stream=None)
-                        namespace = {}
-                        key_file_path = str(key_path) if (hasattr(args, 'id') and (key_path := find_slot(args.id))) else hasattr(args, 'path')
-                        exec(decrypt_file(key_file_path, password) if password != '' else open(key_file_path).read(), namespace)
-                        namespace['invoke']()
+                    try:
+                        if (key_path := find_slot(args.id)) is not None:
+                            namespace = {}
+                            name, ext = os.path.splitext(os.path.basename(key_path))
 
+                            if name.endswith('.enc'):
+                                password = getpass.getpass('Enter passphrase to decrypt the module:\n', stream=None)
+                                exec(decrypt_file(str(key_path), password), namespace)
+                            else:
+                                exec(open(str(key_path)).read(), namespace)
+
+                            namespace['invoke']()
+
+                        else:
+                            print(f"Unable to find the slot: {args.id}", file=sys.stderr)
+
+                    except (DuplicateSlotID, IncorrectPasswordOrCorruptedFile) as e:
+                        print(str(e), file=sys.stderr)
                 except KeyboardInterrupt:
                     wipe_out()
                     return
@@ -267,7 +280,7 @@ def main(args, parser):
                         print(f"Slot `{args.id}` saved to `{args.path}`")
                     else:
                         print(f"Unable to find the slot: {args.id}", file=sys.stderr)
-                except DuplicateSlotID as e:
+                except (DuplicateSlotID, IncorrectPasswordOrCorruptedFile) as e:
                     print(str(e), file=sys.stderr)
                     exit(1)
             case _:
@@ -286,5 +299,8 @@ if __name__ == '__main__':
 
 # Todo:
 #   - setup automatic publish pipeline and acquire badges
-#   - implement unittests
+#   - review tests
 #   - check for security enchantments
+#   - rename project
+#   -
+#   - write README.md file (Docs)
