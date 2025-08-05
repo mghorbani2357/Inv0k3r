@@ -165,7 +165,7 @@ class TestListModuleOfInvokerCLI(BaseInvokerCLITestCase):
         f, e = execute_and_get_output(['add', f'{SCRIPTS_PATH}/correct.py'], False)
         f, e = execute_and_get_output(['list'])
         output = f.getvalue().strip()
-        self.assertEqual("Key Hash    Key Name\n--------    --------\n\n344fa8c3    correct\n07dc3eb2    bare_invoke", output)
+        self.assertEqual("Key Hash    Key Name\n--------    --------\n\n07dc3eb2    bare_invoke\n344fa8c3    correct", output)
 
     @patch('getpass.getpass', side_effect=['VerySecurePassPhrase', 'VerySecurePassPhrase'])
     def test_list_after_encrypted_slot_addition(self, mock_getpass):
