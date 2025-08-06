@@ -1,5 +1,11 @@
 # Invoker CLI: Secure Script Execution
 
+![GitHub License](https://img.shields.io/github/license/mghorbani2357/invoker-cli)
+![GitHub last commit](https://img.shields.io/github/last-commit/mghorbani2357/invoker-cli)
+![GitHub Release](https://img.shields.io/github/v/release/mghorbani2357/invoker-cli)
+
+
+
 ## 0. Publisher's Note
 The genesis of this project, Invoker CLI, is rooted in a sobering reality of our digital age. It began not as a technical exercise, but as a personal mission. When one of close friend's company suffered a devastating data breach—a stark example of a threat many assume is distant—the consequences of compromised credentials became intensely real. This event was followed by the chilling revelation of a 16-billion-record password leak from major platforms like Google, Facebook, and Apple. It became clear that the traditional model of storing sensitive information was fundamentally broken and that the problem was far larger than any single individual or company.
 
