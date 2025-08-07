@@ -31,8 +31,11 @@ jobs:
 
       - name: Build executable
         run: |
-          # The output filename will be invoker-cli-[os], Nuitka adds .exe on Windows
-          nuitka --standalone --onefile --lto=yes --output-filename="invoker-cli-${{ runner.os }}" src/invoker_cli.py
+          if [ "${{ runner.os }}" == "Windows" ]; then
+            nuitka --standalone --onefile --lto=yes --output-filename="invoker-cli-${{ runner.os }}" src/invoker_cli.py --msvc=latest
+          else
+            nuitka --standalone --onefile --lto=yes --output-filename="invoker-cli-${{ runner.os }}" src/invoker_cli.py
+          fi
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
