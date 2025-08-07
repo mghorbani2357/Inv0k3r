@@ -31,7 +31,7 @@ jobs:
         run: |
           # The output filename will be invoker-cli-[os]-[arch]
           # Nuitka automatically adds .exe on Windows
-          nuitka --standalone --onefile --lto=yes --output-filename="invoker-cli-${{ runner.os }}" src/invoker_cli.py
+          nuitka --standalone --onefile --lto=yes --output-filename="invoker-cli-${{ runner.os }}" invoker-cli/src/invoker-cli.py
 
       - name: Rename and prepare files for upload
         run: |
