@@ -301,6 +301,3 @@ if __name__ == '__main__':
 #   - setup automatic publish pipeline and acquire badges
 #   - review tests
 #   - check for security enchantments
-#   - rename project
-#   -
-#   - write README.md file (Docs)

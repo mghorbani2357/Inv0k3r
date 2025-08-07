@@ -7,5 +7,7 @@ __copyright__ = "Copyright 2025, Mohsen Ghorbani"
 from setuptools import setup, find_packages
 
 
+REQUIREMENTS = filter(None, open('requirements.txt').read().splitlines())
+
 setup(
 )
