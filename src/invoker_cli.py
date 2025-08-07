@@ -288,7 +288,7 @@ def main(args, parser):
     else:
 
         if args.version:
-            print(f'keyforge version {get_version()}')
+            print(f'Invoker-CLI version {get_version()}')
         else:
             parser.print_help()
 

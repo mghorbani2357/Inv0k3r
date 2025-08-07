@@ -1,6 +1,7 @@
 # Invoker CLI: Secure Script Execution
 
 ![GitHub License](https://img.shields.io/github/license/mghorbani2357/invoker-cli)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/f8aee29bfd084444b2bfc1c3354c181d)](https://app.codacy.com/gh/mghorbani2357/invoker-cli/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 ![GitHub last commit](https://img.shields.io/github/last-commit/mghorbani2357/invoker-cli)
 ![GitHub Release](https://img.shields.io/github/v/release/mghorbani2357/invoker-cli)
 

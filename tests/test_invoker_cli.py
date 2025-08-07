@@ -10,7 +10,7 @@ from unittest.mock import patch, mock_open
 import src.invoker_cli as invoker_module
 from src.invoker_cli import create_parser, main
 
-SCRIPTS_PATH = 'src/_helper/scripts'
+SCRIPTS_PATH = 'tests/_helper/scripts'
 LOCK_FILE_PATH = "/tmp/invoker.lock"
 
 def initialize_test_environment():
