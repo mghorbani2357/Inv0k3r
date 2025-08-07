@@ -29,11 +29,8 @@ jobs:
           coverage run -m unittest discover -s tests
           coverage xml
 
-      - name: Upload coverage to Codacy
-        uses: codacy/codacy-coverage-reporter-action@v1
-        with:
-          project-token: ${{ secrets.CODACY_TOKEN }}
-          coverage-reports: coverage.xml
+#       - name: Upload coverage to Codacy
+#         run: bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r coverage.xml -t ${{ secrets.CODACY_TOKEN }}
 
       - name: Build the package
         run: python -m build
