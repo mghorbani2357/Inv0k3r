@@ -52,9 +52,8 @@ jobs:
           elif [ "${{ runner.os }}" == "macOS" ]; then
             mv "invoker-cli-macOS" "invoker-cli-macos"
           fi
-        shell: bash
 
-      - name: Upload release asset (Linux)
+      - name: Upload release asset (Linux & macOS)
         if: matrix.os != 'windows-latest'
         uses: softprops/action-gh-release@v2
         with:
@@ -63,12 +62,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-        - name: Upload artifact (Windows)
+      - name: Upload artifact (Windows)
         if: matrix.os == 'windows-latest'
-        uses: actions/upload-artifact@v4
+        uses: softprops/action-gh-release@v2
         with:
-          name: invoker-cli-binary-${{ runner.os }}.exe
-          path: |
-            invoker-cli-${{ runner.os }}.exe
-          retention-days: 1
-          if-no-files-found: error
+          files: |
+            invoker-cli-binary-${{ runner.os }}.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
