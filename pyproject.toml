@@ -45,6 +45,6 @@ Repository = "https://github.com/mghorbani2357/invoker-cli.git"
 invoker = "invoker_cli:main"
 
 [tool.setuptools_scm]
-version_scheme = "guess-next-dev"
-local_scheme = "node-and-date"
+version_scheme = "post-release"
+local_scheme = "dirty-tag"
 write_to = "src/_version.py"
