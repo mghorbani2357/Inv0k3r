@@ -4,7 +4,6 @@ on:
   release:
     types: [ created ]
 
-# Grant the workflow the necessary permissions to write to releases
 permissions:
   contents: write
 
@@ -32,13 +31,14 @@ jobs:
 
       - name: Build executable
         run: |
-          # Nuitka automatically adds .exe on Windows
+          # The output filename will be invoker-cli-[os], Nuitka adds .exe on Windows
           nuitka --standalone --onefile --lto=yes --output-filename="invoker-cli-${{ runner.os }}" src/invoker_cli.py
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: invoker-cli-binaries
+          # Make artifact name unique for each OS
+          name: invoker-cli-binary-${{ runner.os }}
           path: invoker-cli-*
           retention-days: 1
           if-no-files-found: error
@@ -46,22 +46,39 @@ jobs:
   upload_release_assets:
     name: Upload Release Assets
     runs-on: ubuntu-latest
-    # This job will only run after the 'build' job has successfully completed for all matrix combinations
     needs: build
 
     steps:
-      - name: Download all artifacts
+      - name: Download Linux artifact
         uses: actions/download-artifact@v4
         with:
-          name: invoker-cli-binaries
+          name: invoker-cli-binary-Linux
           path: ./
+
+      - name: Download macOS artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: invoker-cli-binary-macOS
+          path: ./
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: invoker-cli-binary-Windows
+          path: ./
+
+      - name: Rename and prepare files
+        run: |
+          mv invoker-cli-binary-Linux/invoker-cli-Linux invoker-cli-linux
+          mv invoker-cli-binary-macOS/invoker-cli-macOS invoker-cli-macos
+          mv invoker-cli-binary-Windows/invoker-cli-Windows.exe invoker-cli-windows.exe
 
       - name: Upload release assets
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            invoker-cli-Linux
-            invoker-cli-macOS
-            invoker-cli-Windows.exe
+            invoker-cli-linux
+            invoker-cli-macos
+            invoker-cli-windows.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
