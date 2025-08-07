@@ -2,11 +2,14 @@ name: Build Binaries
 
 on:
   release:
-    branches: [ "master" ]
     types: [ created ]
+
+# Grant the workflow the necessary permissions to write to releases
+permissions:
+  contents: write
+
 jobs:
   build:
-
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
@@ -27,35 +30,38 @@ jobs:
           python -m pip install --upgrade pip
           pip install nuitka zstandard
 
-      - name: Build executable with Nuitka
+      - name: Build executable
         run: |
-          # The output filename will be invoker-cli-[os]-[arch]
           # Nuitka automatically adds .exe on Windows
-          ls
-          pwd
-          nuitka --standalone --onefile --lto=yes --output-filename="invoker-cli-${{ runner.os }}" src/invoker-cli.py
+          nuitka --standalone --onefile --lto=yes --output-filename="invoker-cli-${{ runner.os }}" src/invoker_cli.py
 
-      - name: Rename and prepare files for upload
-        run: |
-          if [ "${{ runner.os }}" == "Linux" ]; then
-            mv "invoker-cli-Linux" "invoker-cli-linux"
-          elif [ "${{ runner.os }}" == "macOS" ]; then
-            mv "invoker-cli-macOS" "invoker-cli-macos"
-          elif [ "${{ runner.os }}" == "Windows" ]; then
-            mv "invoker-cli-Windows.exe" "invoker-cli-windows.exe"
-          fi
-          # Also, move the file into the current directory for easy upload
-          # The path might be slightly different depending on Nuitka's output
-          if [ -d "dist" ]; then
-            mv "dist/invoker-cli-${{ runner.os }}" "invoker-cli-${{ runner.os }}"
-          fi
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: invoker-cli-binaries
+          path: invoker-cli-*
+          retention-days: 1
+          if-no-files-found: error
 
-      - name: Upload release asset
+  upload_release_assets:
+    name: Upload Release Assets
+    runs-on: ubuntu-latest
+    # This job will only run after the 'build' job has successfully completed for all matrix combinations
+    needs: build
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: invoker-cli-binaries
+          path: ./
+
+      - name: Upload release assets
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            invoker-cli-linux
-            invoker-cli-macos
-            invoker-cli-windows.exe
+            invoker-cli-Linux
+            invoker-cli-macOS
+            invoker-cli-Windows.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
