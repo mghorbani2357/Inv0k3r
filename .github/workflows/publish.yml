@@ -1,12 +1,12 @@
 name: PYPI Publish
+
 on:
   release:
-    branches: [ "master" ]
     types: [ created ]
 
 jobs:
-  build:
-    name: Build & Publish
+  build_and_publish:
+    name: Build, Test & Publish
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -15,13 +15,16 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.13'
+          python-version: '3.12'
 
-      - name: Install build dependencies
+      - name: Install dependencies
         run: |
-          ls
           python -m pip install --upgrade pip
-          pip install build
+          pip install build pytest
+          pip install .  # Install the package itself and its dependencies
+
+      - name: Run tests
+        run: pytest tests/
 
       - name: Build the package
         run: python -m build

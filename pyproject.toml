@@ -7,8 +7,8 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "KeyForge"
-description = "KeyForge is a tool which provide encryption and management of you key generators"
+name = "Invoker-CLI"
+description = "Invoker-CLI is a command-line tool that provides a secure, encrypted keyring for managing and executing your Python scripts."
 readme = {file = "README.md", content-type = "text/markdown"}
 authors = [
     { name = "Mohsen Ghorbani", email = "m.ghorbani2357@gmail.com" },
@@ -18,7 +18,7 @@ maintainers = [
 ]
 license = "GPL-3.0-or-later"
 license-files = ["LICENSE"]
-keywords = ["keyforge", "packaging", "git", "setuptools"]
+keywords = ["invoker", "cli", "invoker-cli", "packaging", "git", "setuptools"]
 classifiers = [
     "Intended Audience :: Developers",
     "Operating System :: MacOS",
@@ -35,14 +35,13 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/mghorbani2357/KeyForge"
-Source = "https://github.com/mghorbani2357/KeyForge"
-Issues = "https://github.com/mghorbani2357/KeyForge/issues"
-Repository = "https://github.com/mghorbani2357/KeyForge.git"
+Homepage = "https://github.com/mghorbani2357/invoker-cli"
+Source = "https://github.com/mghorbani2357/invoker-cli"
+Issues = "https://github.com/mghorbani2357/invoker-cli/issues"
+Repository = "https://github.com/mghorbani2357/invoker-cli.git"
 
 [project.scripts]
-keyforge = "KeyForge.__main__:main"
-kf = "KeyForge.__main__:main"
+invoker = "invoker-cli:main"
 
 [tool.setuptools_scm]
 version_scheme = "guess-next-dev"

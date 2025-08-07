@@ -1,4 +1,4 @@
-"""setup.py for KeyForge"""
+"""setup.py for Invoker-CLI"""
 
 __author__ = "Mohsen Ghorbani"
 __email__ = "m.ghorbani2357@gmail.com"
