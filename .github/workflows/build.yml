@@ -33,6 +33,8 @@ jobs:
         if: matrix.os == 'windows-latest'
         run: |
           nuitka --standalone --onefile --lto=yes --output-filename="invoker-cli-${{ runner.os }}" src/invoker_cli.py --msvc=latest --assume-yes-for-downloads
+          mv "invoker-cli-Windows.exe" "invoker-cli-windows.exe"
+
           ls
           pwd
 
@@ -40,52 +42,33 @@ jobs:
         if: matrix.os != 'windows-latest'
         run: |
           nuitka --standalone --onefile --lto=yes --output-filename="invoker-cli-${{ runner.os }}" src/invoker_cli.py
+          ls
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          # Make artifact name unique for each OS
-          name: invoker-cli-binary-${{ runner.os }}
-          path: invoker-cli*
-          retention-days: 1
-          if-no-files-found: error
-
-  upload_release_assets:
-    name: Upload Release Assets
-    runs-on: ubuntu-latest
-    needs: build
-
-    steps:
-      - name: Download Linux artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: invoker-cli-binary-Linux
-          path: ./
-
-      - name: Download macOS artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: invoker-cli-binary-macOS
-          path: ./
-
-      - name: Download Windows artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: invoker-cli-binary-Windows
-          path: ./
-
-      - name: Rename and prepare files
+      - name: Rename executable for upload
+        if: matrix.os != 'windows-latest'
         run: |
-          mv invoker-cli-binary-Linux/invoker-cli-Linux invoker-cli-linux
-          mv invoker-cli-binary-macOS/invoker-cli-macOS invoker-cli-macos
-          mv invoker-cli-binary-Windows/invoker-cli-Windows.exe invoker-cli-windows.exe
+          if [ "${{ runner.os }}" == "Linux" ]; then
+            mv "invoker-cli-Linux" "invoker-cli-linux"
+          elif [ "${{ runner.os }}" == "macOS" ]; then
+            mv "invoker-cli-macOS" "invoker-cli-macos"
+          fi
+        shell: bash
 
-      - name: Upload release assets
+      - name: Upload release asset (Linux)
+        if: matrix.os != 'windows-latest'
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            invoker-cli-linux
-            invoker-cli-macos
-            invoker-cli-windows.exe
+            invoker-cli-${{ runner.os }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+        - name: Upload artifact (Windows)
+        if: matrix.os == 'windows-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: invoker-cli-binary-${{ runner.os }}.exe
+          path: |
+            invoker-cli-${{ runner.os }}.exe
+          retention-days: 1
+          if-no-files-found: error
