@@ -24,11 +24,14 @@ jobs:
           pip install wheel twine coverage
         if: steps.cache-virtualenv.outputs.cache-hit != 'true'
 
-      - name: Run Tests
-        run: coverage run -m unittest tests/test_invoker_cli.py; coverage xml
+      - name: Run tests
+        run: coverage run -m unittest tests/test_invoker_cli.py
 
-      - name: Codacy Coverage
-        run: bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r coverage.xml -t ${{ secrets.CODACY_TOKEN }}
+      - name: Upload coverage to Codacy
+        uses: codacy/gh-action-coverage-reporter@v1
+        with:
+          project-token: ${{ secrets.CODACY_TOKEN }}
+          coverage-reports: coverage.xml
 
       - name: Build the package
         run: python -m build
