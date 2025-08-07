@@ -33,8 +33,6 @@ jobs:
         if: matrix.os == 'windows-latest'
         run: |
           nuitka --standalone --onefile --lto=yes --output-filename="invoker-cli-${{ runner.os }}" src/invoker_cli.py --msvc=latest --assume-yes-for-downloads
-          mv "invoker-cli-Windows.exe" "invoker-cli-windows.exe"
-
           ls
           pwd
 
@@ -43,15 +41,6 @@ jobs:
         run: |
           nuitka --standalone --onefile --lto=yes --output-filename="invoker-cli-${{ runner.os }}" src/invoker_cli.py
           ls
-
-      - name: Rename executable for upload
-        if: matrix.os != 'windows-latest'
-        run: |
-          if [ "${{ runner.os }}" == "Linux" ]; then
-            mv "invoker-cli-Linux" "invoker-cli-linux"
-          elif [ "${{ runner.os }}" == "macOS" ]; then
-            mv "invoker-cli-macOS" "invoker-cli-macos"
-          fi
 
       - name: Upload release asset (Linux & macOS)
         if: matrix.os != 'windows-latest'
