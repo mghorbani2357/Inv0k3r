@@ -3,10 +3,10 @@ name: Build Binaries
 on:
   release:
     types: [ created ]
-Ω
+
 permissions:
   contents: write
-as
+
 jobs:
   build:
     strategy:
