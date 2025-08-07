@@ -29,13 +29,15 @@ jobs:
           python -m pip install --upgrade pip
           pip install nuitka zstandard
 
-      - name: Build executable
+      - name: Build executable on Windows
+        if: matrix.os == 'windows-latest'
         run: |
-          if [ "${{ runner.os }}" == "Windows" ]; then
-            nuitka --standalone --onefile --lto=yes --output-filename="invoker-cli-${{ runner.os }}" src/invoker_cli.py --msvc=latest
-          else
-            nuitka --standalone --onefile --lto=yes --output-filename="invoker-cli-${{ runner.os }}" src/invoker_cli.py
-          fi
+          nuitka --standalone --onefile --lto=yes --output-filename="invoker-cli-${{ runner.os }}" src/invoker_cli.py --msvc=latest
+
+      - name: Build executable
+        if: matrix.os != 'windows-latest'
+        run: |
+          nuitka --standalone --onefile --lto=yes --output-filename="invoker-cli-${{ runner.os }}" src/invoker_cli.py
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
