@@ -26,7 +26,7 @@ jobs:
       - name: Run tests with unittest
         # This command uses Python's built-in unittest module to discover and run tests
         # It will find all test files in the 'tests/' directory
-        run: python -m unittest discover tests/invoker_cli.py
+        run: python -m unittest discover tests/test_invoker_cli.py
 
       - name: Build the package
         run: python -m build
