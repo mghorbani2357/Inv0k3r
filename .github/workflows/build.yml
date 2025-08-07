@@ -3,10 +3,10 @@ name: Build Binaries
 on:
   release:
     types: [ created ]
-
+Ω
 permissions:
   contents: write
-
+as
 jobs:
   build:
     strategy:
@@ -32,7 +32,7 @@ jobs:
       - name: Build executable on Windows
         if: matrix.os == 'windows-latest'
         run: |
-          nuitka --standalone --onefile --lto=yes --output-filename="invoker-cli-${{ runner.os }}" src/invoker_cli.py --msvc=latest
+          nuitka --standalone --onefile --lto=yes --output-filename="invoker-cli-${{ runner.os }}" src/invoker_cli.py --msvc=latest --assume-yes-for-downloads
           ls
           pwd
 
