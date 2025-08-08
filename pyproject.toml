@@ -42,7 +42,7 @@ Issues = "https://github.com/mghorbani2357/invoker-cli/issues"
 Repository = "https://github.com/mghorbani2357/invoker-cli.git"
 
 [project.scripts]
-invoker = "invoker_cli:main"
+invoker = "invoker_cli"
 
 [tool.setuptools_scm]
 version_scheme = "post-release"
