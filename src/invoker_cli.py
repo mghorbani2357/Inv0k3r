@@ -158,7 +158,9 @@ def get_version():
         return "unknown"
 
 
-def main(args, parser):
+def main():
+    parser = create_parser()
+    args = parser.parse_args()
     os.makedirs(INVOKER_HOME_DIR, exist_ok=True)
     os.makedirs(INVOKER_SLOTS_DIR, exist_ok=True)
 
@@ -294,8 +296,7 @@ def main(args, parser):
 
 
 if __name__ == '__main__':
-    parser = create_parser()
-    main(parser.parse_args(), parser)
+    main()
 
 # Todo:
 #   - setup automatic publish pipeline and acquire badges
