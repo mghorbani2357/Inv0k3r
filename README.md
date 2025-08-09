@@ -3,10 +3,11 @@
 ![GitHub License](https://img.shields.io/github/license/mghorbani2357/invoker-cli)
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/mghorbani2357/invoker-cli/build.yml?branch=master)
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/mghorbani2357/invoker-cli/publish.yml?branch=master&label=publish)
+[![Codacy Badge](https://app.codacy.com/project/badge/Coverage/f8aee29bfd084444b2bfc1c3354c181d)](https://app.codacy.com/gh/mghorbani2357/invoker-cli/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_coverage)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/f8aee29bfd084444b2bfc1c3354c181d)](https://app.codacy.com/gh/mghorbani2357/invoker-cli/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 ![PyPI - Downloads](https://img.shields.io/pypi/dd/invoker-cli?label=hpd)
 [![PyPI Downloads](https://static.pepy.tech/badge/invoker-cli)](https://pepy.tech/projects/invoker-cli)
 ![PyPI - Format](https://img.shields.io/pypi/format/invoker-cli)
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/f8aee29bfd084444b2bfc1c3354c181d)](https://app.codacy.com/gh/mghorbani2357/invoker-cli/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 ![GitHub last commit](https://img.shields.io/github/last-commit/mghorbani2357/invoker-cli)
 ![GitHub Release](https://img.shields.io/github/v/release/mghorbani2357/invoker-cli)
 
