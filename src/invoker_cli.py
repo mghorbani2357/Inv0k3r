@@ -180,8 +180,8 @@ def main(args, parser):
                             if args.encrypt:
                                 name, extension = os.path.splitext(os.path.basename(args.path))
 
-                                password = getpass.getpass('Enter passphrase to encrypt the module:\n', stream=None)
-                                password_confirm = getpass.getpass('Please enter passphrase to confirm:\n', stream=None)
+                                password = getpass.getpass('Enter passphrase to encrypt the module:', stream=None)
+                                password_confirm = getpass.getpass('Please enter passphrase to confirm:', stream=None)
                                 if password != password_confirm:
                                     print(f"Operation aborted: passphrase confirmation failed", file=sys.stderr)
                                     exit(1)
@@ -236,7 +236,7 @@ def main(args, parser):
                             name, ext = os.path.splitext(os.path.basename(key_path))
 
                             if name.endswith('.enc'):
-                                password = getpass.getpass('Enter passphrase to decrypt the module:\n', stream=None)
+                                password = getpass.getpass('Enter passphrase to decrypt the module:', stream=None)
                                 exec(decrypt_file(str(key_path), password), namespace)
                             else:
                                 exec(open(str(key_path)).read(), namespace)
@@ -268,7 +268,7 @@ def main(args, parser):
                     if (key_path := find_slot(args.id)) is not None:
                         name, extension = os.path.splitext(os.path.basename(str(key_path.absolute())))
                         if args.decrypt and name.endswith('.enc'):
-                            password = getpass.getpass('Enter passphrase to decrypt the module:\n', stream=None)
+                            password = getpass.getpass('Enter passphrase to decrypt the module:', stream=None)
                             with open(args.path, 'wb') as f_out:
                                 try:
                                     f_out.write(decrypt_file(str(key_path), password))
