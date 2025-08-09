@@ -180,7 +180,7 @@ def main(args, parser):
                             if args.encrypt:
                                 name, extension = os.path.splitext(os.path.basename(args.path))
 
-                                password = getpass.getpass('Enter passphrase to encrypt the module(leave it blank if you don\'t want to encrypt it):\n', stream=None)
+                                password = getpass.getpass('Enter passphrase to encrypt the module:\n', stream=None)
                                 password_confirm = getpass.getpass('Please enter passphrase to confirm:\n', stream=None)
                                 if password != password_confirm:
                                     print(f"Operation aborted: passphrase confirmation failed", file=sys.stderr)
