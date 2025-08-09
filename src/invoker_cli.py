@@ -302,6 +302,5 @@ if __name__ == '__main__':
     cli()
 
 # Todo:
-#   - setup automatic publish pipeline and acquire badges
 #   - review tests
 #   - check for security enchantments

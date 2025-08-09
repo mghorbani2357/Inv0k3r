@@ -12,8 +12,11 @@
 ![GitHub last commit](https://img.shields.io/github/last-commit/mghorbani2357/invoker-cli)
 ![GitHub Release](https://img.shields.io/github/v/release/mghorbani2357/invoker-cli)
 
+Invoker CLI is a command-line utility designed for the secure management and execution of local Python scripts. It addresses the critical challenge of handling sensitive data—such as API keys and credentials—by providing a secure, centralized "keyring" for your executable code.
 
+Instead of storing secrets directly, Invoker stores and encrypts the scripts themselves. By adding scripts to Invoker's managed "slots," you can execute them on demand from anywhere in your terminal, with the assurance that their source code is protected by a robust, password-based encryption layer. This approach ensures that your most sensitive logic is never exposed, offering a powerful and elegant solution for digital security and privacy.
 
+---
 
 
 ## 0. Publisher's Note
@@ -25,10 +28,50 @@ This led to the concept of empowering each user to have their own unique method 
 
 This line of thought evolved into the Invoker CLI. It's a secure "keyring" for your executable code, a centralized system for managing and running your personal security scripts. It ensures that your unique methods for generating credentials remain private, protected by state-of-the-art encryption. This project is a direct response to a widespread problem, offering a practical, developer-centric solution that prioritizes security and privacy in a world where it's becoming an increasingly rare commodity.
 
-## 1. Introduction
-Invoker CLI is a command-line utility designed for the secure management and execution of local Python scripts. It addresses the critical challenge of handling sensitive data—such as API keys and credentials—by providing a secure, centralized "keyring" for your executable code.
+## 1. Quick Start
+This guide will walk you through the essential steps to begin using Invoker CLI.
 
-Instead of storing secrets directly, Invoker stores and encrypts the scripts themselves. By adding scripts to Invoker's managed "slots," you can execute them on demand from anywhere in your terminal, with the assurance that their source code is protected by a robust, password-based encryption layer. This approach ensures that your most sensitive logic is never exposed, offering a powerful and elegant solution for digital security and privacy.
+### Step 1: Installation
+Use pip to install the package directly.
+
+```bash
+pip install invoker-cli
+```
+
+### Step 2: Confirm Installation
+After the first time you run any Invoker command, it automatically creates the necessary directory structure for you. You can confirm your installation by checking the tool's version.
+
+```bash
+invoker --version
+# or
+invoker -v
+```
+
+### Step 3: Create a Compatible Script
+For a Python script to be compatible with Invoker, it must contain a function named invoke(). This function serves as the sole entry point that Invoker calls when executing a slot. Here is an example script you can use, saved as `hello.py`:
+
+```python
+def invoke():
+    print("Hello from Invoker CLI!")
+```
+
+
+### Step 4: Add and Run the Script
+Use the `add` command to store your script in slot-ring.
+
+```bash
+invoker add hello.py
+```
+
+Use the invoke command to run it.
+
+```bash
+invoker invoke hello
+
+# Output ->
+
+Hello from Invoker CLI!
+```
 
 ## 2. Core Concepts Explained
 
