@@ -96,7 +96,7 @@ def decrypt_file(encrypted_path: str, password: str):
     try:
         plaintext = aesgcm.decrypt(nonce, ciphertext, None)
     except Exception as e:
-        raise IncorrectPasswordOrCorruptedFile(f"Decryption failed: incorrect password or corrupted file")
+        raise IncorrectPasswordOrCorruptedFile("Decryption failed: incorrect password or corrupted file")
     return plaintext
 
 

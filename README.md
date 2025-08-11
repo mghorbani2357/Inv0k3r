@@ -6,7 +6,7 @@
 [![Publish to PyPI](https://github.com/mghorbani2357/invoker-cli/actions/workflows/publish.yml/badge.svg?event=release)](https://github.com/mghorbani2357/invoker-cli/actions/workflows/publish.yml)
 [![Codacy Badge](https://app.codacy.com/project/badge/Coverage/f8aee29bfd084444b2bfc1c3354c181d)](https://app.codacy.com/gh/mghorbani2357/invoker-cli/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_coverage)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/f8aee29bfd084444b2bfc1c3354c181d)](https://app.codacy.com/gh/mghorbani2357/invoker-cli/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
-![PyPI - Downloads](https://img.shields.io/pypi/dd/invoker-cli?label=hpd)
+![PyPI - Downloads](https://img.shields.io/pypi/dd/invoker-cli?label=HPD)
 [![PyPI Downloads](https://static.pepy.tech/badge/invoker-cli)](https://pepy.tech/projects/invoker-cli)
 ![PyPI - Format](https://img.shields.io/pypi/format/invoker-cli)
 ![GitHub last commit](https://img.shields.io/github/last-commit/mghorbani2357/invoker-cli)
@@ -17,7 +17,6 @@ Invoker CLI is a command-line utility designed for the secure management and exe
 Instead of storing secrets directly, Invoker stores and encrypts the scripts themselves. By adding scripts to Invoker's managed "slots," you can execute them on demand from anywhere in your terminal, with the assurance that their source code is protected by a robust, password-based encryption layer. This approach ensures that your most sensitive logic is never exposed, offering a powerful and elegant solution for digital security and privacy.
 
 ---
-
 
 ## 0. Publisher's Note
 The genesis of this project, Invoker CLI, is rooted in a sobering reality of our digital age. It began not as a technical exercise, but as a personal mission. When one of close friend's company suffered a devastating data breach—a stark example of a threat many assume is distant—the consequences of compromised credentials became intensely real. This event was followed by the chilling revelation of a 16-billion-record password leak from major platforms like Google, Facebook, and Apple. It became clear that the traditional model of storing sensitive information was fundamentally broken and that the problem was far larger than any single individual or company.
