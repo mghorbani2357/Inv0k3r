@@ -129,6 +129,7 @@ def create_parser():
     add_subparsers.set_defaults(which='add')
     add_subparsers.add_argument('path', metavar='', type=str, help='path to python executable file')
     add_subparsers.add_argument('-e', '--encrypt', action='store_true', default=False, help='encrypt context')
+    add_subparsers.add_argument('-l', '--load', action='store_true', default=False, help='load context')
 
     list_subparsers = subparsers.add_parser('list', help='list key smiths')
     list_subparsers.set_defaults(which='list')
@@ -165,43 +166,47 @@ def main(args, parser):
     if hasattr(args, 'which'):
         match args.which:
             case 'add':
-                # Todo: implement import switch
                 if os.path.exists(args.path):
-                    spec = importlib.util.spec_from_file_location('key', args.path)
-                    module = importlib.util.module_from_spec(spec)
-                    if spec.loader:
-                        try:
-                            spec.loader.exec_module(module)
-                        except SyntaxError as e:
-                            print(f"Operation aborted: invalid input", file=sys.stderr)
-                            exit(1)
-                        if hasattr(module, 'invoke'):
-                            buffer = None
-                            if args.encrypt:
-                                name, extension = os.path.splitext(os.path.basename(args.path))
-
-                                password = getpass.getpass('Enter passphrase to encrypt the module:', stream=None)
-                                password_confirm = getpass.getpass('Please enter passphrase to confirm:', stream=None)
-                                if password != password_confirm:
-                                    print(f"Operation aborted: passphrase confirmation failed", file=sys.stderr)
-                                    exit(1)
-                                buffer = encrypt_file(args.path, password)
-                                out_put_slot_path = f'{INVOKER_SLOTS_DIR}/{name}.enc{extension}'
-                            else:
-                                out_put_slot_path = f'{INVOKER_SLOTS_DIR}/{os.path.basename(args.path)}'
-
-                                with open(args.path, 'rb') as f_in:
-                                    buffer = f_in.read()
-                            if find_slot(hashlib.sha256(buffer).hexdigest()) is None:
-                                with open(out_put_slot_path, 'wb') as f_out:
-                                    f_out.write(buffer)
-                                print(f"{sha256sum(out_put_slot_path)} added to slot-ring")
-                            else:
-                                print(f"Operation aborted: slot already exists", file=sys.stderr)
-                        else:
-                            print(f"Operation aborted: module does not have `invoke` method", file=sys.stderr)
+                    if args.load:
+                        # Todo: Load module & test
+                        shutil.copy(args.path, f'{INVOKER_SLOTS_DIR}/{os.path.basename(args.path)}')
                     else:
-                        print(f"Operation aborted: No loader found for {args.path}", file=sys.stderr)
+
+                        spec = importlib.util.spec_from_file_location('key', args.path)
+                        module = importlib.util.module_from_spec(spec)
+                        if spec.loader:
+                            try:
+                                spec.loader.exec_module(module)
+                            except SyntaxError as e:
+                                print(f"Operation aborted: invalid input", file=sys.stderr)
+                                exit(1)
+                            if hasattr(module, 'invoke'):
+                                buffer = None
+                                if args.encrypt:
+                                    name, extension = os.path.splitext(os.path.basename(args.path))
+
+                                    password = getpass.getpass('Enter passphrase to encrypt the module:', stream=None)
+                                    password_confirm = getpass.getpass('Please enter passphrase to confirm:', stream=None)
+                                    if password != password_confirm:
+                                        print(f"Operation aborted: passphrase confirmation failed", file=sys.stderr)
+                                        exit(1)
+                                    buffer = encrypt_file(args.path, password)
+                                    out_put_slot_path = f'{INVOKER_SLOTS_DIR}/{name}.enc{extension}'
+                                else:
+                                    out_put_slot_path = f'{INVOKER_SLOTS_DIR}/{os.path.basename(args.path)}'
+
+                                    with open(args.path, 'rb') as f_in:
+                                        buffer = f_in.read()
+                                if find_slot(hashlib.sha256(buffer).hexdigest()) is None:
+                                    with open(out_put_slot_path, 'wb') as f_out:
+                                        f_out.write(buffer)
+                                    print(f"{sha256sum(out_put_slot_path)} added to slot-ring")
+                                else:
+                                    print(f"Operation aborted: slot already exists", file=sys.stderr)
+                            else:
+                                print(f"Operation aborted: module does not have `invoke` method", file=sys.stderr)
+                        else:
+                            print(f"Operation aborted: No loader found for {args.path}", file=sys.stderr)
                 else:
                     print(f"Operation aborted: file '{args.path}' does not exists", file=sys.stderr)
 
