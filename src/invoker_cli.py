@@ -35,8 +35,37 @@ class IncorrectPasswordOrCorruptedFile(Exception):
 
 
 if os.name == 'nt':
+    import msvcrt
+
+    def _get_key():
+        return msvcrt.getch().decode().lower()
     kernel32 = ctypes.windll.kernel32
     kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), 7)
+
+else:
+    import tty
+    import termios
+
+    def _get_key():
+        fd = sys.stdin.fileno()
+        old_settings = termios.tcgetattr(fd)
+        try:
+            tty.setraw(fd)
+            return sys.stdin.read(1).lower()
+        finally:
+            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+
+
+def get_key(msg, options):
+    while True:
+        print(msg,end='')
+        sys.stdout.flush()
+
+        key = _get_key()
+        if key in options:
+            return key
+
+        print('\r',end='')
 
 
 def clear_cli():
@@ -169,7 +198,16 @@ def main(args, parser):
                 if os.path.exists(args.path):
                     if args.load:
                         # Todo: Load module & test
-                        shutil.copy(args.path, f'{INVOKER_SLOTS_DIR}/{os.path.basename(args.path)}')
+                        key = get_key("does your module encrypted(y/n): ", ('y','n'))
+                        if key == 'y':
+                            password = getpass.getpass('Enter passphrase to decrypt the module: ', stream=None)
+                            context = decrypt_file(str(args.path), password)
+                            spec = importlib.util.spec_from_file_location('key', args.path)
+                            module = importlib.util.module_from_spec(spec)
+                        # out_put_slot_path = f'{INVOKER_SLOTS_DIR}/{os.path.basename(args.path)}'
+                        # shutil.copy(args.path, out_put_slot_path)
+                        # print(f"{sha256sum(out_put_slot_path)} added to slot-ring")
+
                     else:
 
                         spec = importlib.util.spec_from_file_location('key', args.path)
@@ -185,8 +223,8 @@ def main(args, parser):
                                 if args.encrypt:
                                     name, extension = os.path.splitext(os.path.basename(args.path))
 
-                                    password = getpass.getpass('Enter passphrase to encrypt the module:', stream=None)
-                                    password_confirm = getpass.getpass('Please enter passphrase to confirm:', stream=None)
+                                    password = getpass.getpass('Enter passphrase to encrypt the module: ', stream=None)
+                                    password_confirm = getpass.getpass('Please enter passphrase to confirm: ', stream=None)
                                     if password != password_confirm:
                                         print(f"Operation aborted: passphrase confirmation failed", file=sys.stderr)
                                         exit(1)
