@@ -1,4 +1,5 @@
 import argparse
+import ast
 import ctypes
 import getpass
 import hashlib
@@ -8,6 +9,7 @@ import shutil
 import subprocess
 import sys
 import traceback
+import types
 from importlib.metadata import version, PackageNotFoundError
 from pathlib import Path
 
@@ -197,16 +199,25 @@ def main(args, parser):
             case 'add':
                 if os.path.exists(args.path):
                     if args.load:
-                        # Todo: Load module & test
-                        key = get_key("does your module encrypted(y/n): ", ('y','n'))
-                        if key == 'y':
+                        try:
                             password = getpass.getpass('Enter passphrase to decrypt the module: ', stream=None)
                             context = decrypt_file(str(args.path), password)
+                            ast.parse(context)
+                            module_name = "module"
+                            module = types.ModuleType(module_name)
+                            namespace = module.__dict__
+                            exec(context, namespace)
                             spec = importlib.util.spec_from_file_location('key', args.path)
                             module = importlib.util.module_from_spec(spec)
-                        # out_put_slot_path = f'{INVOKER_SLOTS_DIR}/{os.path.basename(args.path)}'
-                        # shutil.copy(args.path, out_put_slot_path)
-                        # print(f"{sha256sum(out_put_slot_path)} added to slot-ring")
+                            if hasattr(module, 'invoke'):
+                                out_put_slot_path = f'{INVOKER_SLOTS_DIR}/{os.path.basename(args.path)}'
+                                shutil.copy(args.path, out_put_slot_path)
+                                print(f"{sha256sum(out_put_slot_path)} added to slot-ring")
+
+                            else:
+                                print(f"Operation aborted: module does not have `invoke` method", file=sys.stderr)
+                        except Exception as e :
+                            print(f"Operation aborted: invalid contex", file=sys.stderr)
 
                     else:
 
