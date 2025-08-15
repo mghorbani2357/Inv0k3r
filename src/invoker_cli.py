@@ -37,37 +37,8 @@ class IncorrectPasswordOrCorruptedFile(Exception):
 
 
 if os.name == 'nt':
-    import msvcrt
-
-    def _get_key():
-        return msvcrt.getch().decode().lower()
     kernel32 = ctypes.windll.kernel32
     kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), 7)
-
-else:
-    import tty
-    import termios
-
-    def _get_key():
-        fd = sys.stdin.fileno()
-        old_settings = termios.tcgetattr(fd)
-        try:
-            tty.setraw(fd)
-            return sys.stdin.read(1).lower()
-        finally:
-            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-
-
-def get_key(msg, options):
-    while True:
-        print(msg,end='')
-        sys.stdout.flush()
-
-        key = _get_key()
-        if key in options:
-            return key
-
-        print('\r',end='')
 
 
 def clear_cli():
@@ -126,7 +97,7 @@ def decrypt_file(encrypted_path: str, password: str):
 
     try:
         plaintext = aesgcm.decrypt(nonce, ciphertext, None)
-    except Exception as e:
+    except Exception:
         raise IncorrectPasswordOrCorruptedFile("Decryption failed: incorrect password or corrupted file")
     return plaintext
 
@@ -148,6 +119,7 @@ def find_slot(slot_identifier) -> Path:
         return results[0]
     elif len(results) > 1:
         raise DuplicateSlotID(f"Error: Multiple identifiers found with provided prefix: {slot_identifier}")
+    return None
 
 
 def create_parser():
@@ -207,8 +179,6 @@ def main(args, parser):
                             module = types.ModuleType(module_name)
                             namespace = module.__dict__
                             exec(context, namespace)
-                            # spec = importlib.util.spec_from_file_location('key', args.path)
-                            # module = importlib.util.module_from_spec(spec)
                             if hasattr(module, 'invoke'):
                                 out_put_slot_path = f'{INVOKER_SLOTS_DIR}/{os.path.basename(args.path)}'
                                 shutil.copy(args.path, out_put_slot_path)
@@ -216,7 +186,7 @@ def main(args, parser):
 
                             else:
                                 print(f"Operation aborted: module does not have `invoke` method", file=sys.stderr)
-                        except Exception as e :
+                        except Exception:
                             print(f"Operation aborted: invalid context", file=sys.stderr)
                     else:
 
@@ -225,7 +195,7 @@ def main(args, parser):
                         if spec.loader:
                             try:
                                 spec.loader.exec_module(module)
-                            except SyntaxError as e:
+                            except SyntaxError:
                                 print(f"Operation aborted: invalid input", file=sys.stderr)
                                 exit(1)
                             if hasattr(module, 'invoke'):
