@@ -207,8 +207,8 @@ def main(args, parser):
                             module = types.ModuleType(module_name)
                             namespace = module.__dict__
                             exec(context, namespace)
-                            spec = importlib.util.spec_from_file_location('key', args.path)
-                            module = importlib.util.module_from_spec(spec)
+                            # spec = importlib.util.spec_from_file_location('key', args.path)
+                            # module = importlib.util.module_from_spec(spec)
                             if hasattr(module, 'invoke'):
                                 out_put_slot_path = f'{INVOKER_SLOTS_DIR}/{os.path.basename(args.path)}'
                                 shutil.copy(args.path, out_put_slot_path)
@@ -217,8 +217,7 @@ def main(args, parser):
                             else:
                                 print(f"Operation aborted: module does not have `invoke` method", file=sys.stderr)
                         except Exception as e :
-                            print(f"Operation aborted: invalid contex", file=sys.stderr)
-
+                            print(f"Operation aborted: invalid context", file=sys.stderr)
                     else:
 
                         spec = importlib.util.spec_from_file_location('key', args.path)

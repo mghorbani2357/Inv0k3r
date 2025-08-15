@@ -105,6 +105,16 @@ class TestAddModuleOfInvokerCLI(BaseInvokerCLITestCase):
             "Hash of file after encryption doesn't changed"
         )
 
+    @patch('getpass.getpass', side_effect=['VerySecurePassPhrase', 'VerySecurePassPhrase', 'VerySecurePassPhrase'])
+    def test_add_import(self, mock_getpass):
+        execute_and_get_output(['add', f'{SCRIPTS_PATH}/bare_invoke.py', '--encrypt'])
+        shutil.move(f"{invoker_module.INVOKER_SLOTS_DIR}/bare_invoke.enc.py", '/tmp/invoke.enc.py')
+        f,e = execute_and_get_output(['add', '/tmp/invoke.enc.py', '--load'])
+
+        bare_invoker_path = Path(f"{invoker_module.INVOKER_SLOTS_DIR}/invoke.enc.py")
+        self.assertTrue(bare_invoker_path.exists(), f"File does not exist: {bare_invoker_path.absolute()}")
+
+
     def test_add_empty_file(self):
         f, e = execute_and_get_output(['add', f'{SCRIPTS_PATH}/empty_file.py'])
         output = e.getvalue().strip()
