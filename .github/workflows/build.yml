@@ -28,19 +28,21 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install nuitka zstandard
+          pip install -r requirements.txt
 
       - name: Build executable on Windows
         if: matrix.os == 'windows-latest'
         run: |
-          nuitka --standalone --onefile --lto=yes --output-filename="invoker-cli-${{ runner.os }}" src/invoker_cli.py --msvc=latest --assume-yes-for-downloads
-          ls
-          pwd
+          nuitka --standalone --onefile --lto=yes --output-filename="invoker-cli-${{ runner.os }}" src/invoker_cli.py \
+          --msvc=latest --assume-yes-for-downloads --follow-imports --include-package=cryptography \
+          --include-package-data=cryptography --include-package=argon2 --include-package-data=argon2 --static-libpython=yes
 
       - name: Build executable
         if: matrix.os != 'windows-latest'
         run: |
-          nuitka --standalone --onefile --lto=yes --output-filename="invoker-cli-${{ runner.os }}" src/invoker_cli.py
-          ls
+          nuitka --standalone --onefile --lto=yes --output-filename="invoker-cli-${{ runner.os }}" src/invoker_cli.py \
+          --follow-imports --include-package=cryptography --include-package-data=cryptography --include-package=argon2 \
+          --include-package-data=argon2 --static-libpython=yes --clang
 
       - name: Upload release asset (Linux & macOS)
         if: matrix.os != 'windows-latest'
