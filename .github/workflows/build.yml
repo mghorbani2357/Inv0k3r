@@ -11,7 +11,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-20.04, windows-latest, macos-latest]
 
     runs-on: ${{ matrix.os }}
 
@@ -41,8 +41,8 @@ jobs:
         if: matrix.os != 'windows-latest'
         run: |
           nuitka --standalone --onefile --lto=yes --output-filename="invoker-cli-${{ runner.os }}" src/invoker_cli.py \
-          --follow-imports --include-package=cryptography --include-package-data=cryptography --include-package=argon2 \
-          --include-package-data=argon2 --static-libpython=yes --clang
+           --include-package=cryptography --include-package-data=cryptography --include-package=argon2 \
+          --include-package-data=argon2 --static-libpython=yes
 
       - name: Upload release asset (Linux & macOS)
         if: matrix.os != 'windows-latest'
