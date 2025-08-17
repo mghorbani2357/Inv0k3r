@@ -157,7 +157,7 @@ def create_parser():
 
 def get_version():
     try:
-        return version("my_package")
+        return version("Invoker-CLI")
     except PackageNotFoundError:
         return "unknown"
 
