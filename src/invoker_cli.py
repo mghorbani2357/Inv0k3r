@@ -311,7 +311,7 @@ def main(args, parser):
     else:
 
         if args.version:
-            print(f'Invoker-CLI version {get_version()}')
+            print(f'Invoker-CLI(v{get_version()})')
         else:
             parser.print_help()
 
