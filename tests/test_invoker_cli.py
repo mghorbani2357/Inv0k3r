@@ -158,7 +158,7 @@ class TestAddModuleOfInvokerCLI(BaseInvokerCLITestCase):
         output = e.getvalue().strip()
         self.assertEqual("Operation aborted: passphrase confirmation failed", output)
 
-    def test_add_duplilcate_file_names(self, mock_getpass):
+    def test_add_duplilcate_file_names(self):
         pass
 class TestListModuleOfInvokerCLI(BaseInvokerCLITestCase):
     def test_list_before_any_addition(self):
